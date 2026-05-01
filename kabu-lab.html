@@ -1,0 +1,1840 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KABU LAB | IR・決算・テクニカル分析</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --sub: #556070;
+      --muted: #8290a4;
+      --paper: #f6efe2;
+      --card: rgba(255, 250, 239, .88);
+      --line: #ded0b8;
+      --red: #b8332c;
+      --green: #167a4a;
+      --gold: #c98b21;
+      --blue: #245ca6;
+      --accent: #bf4d28;
+      --radius: 20px;
+      --mono: "Cascadia Mono", "Consolas", monospace;
+      --sans: "BIZ UDPGothic", "Yu Gothic", "Meiryo", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at top left, rgba(191,77,40,.17), transparent 32rem),
+        radial-gradient(circle at top right, rgba(22,122,74,.16), transparent 30rem),
+        linear-gradient(135deg, #efe2cb, #faf4ea 48%, #ead7b9);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .35;
+      background-image:
+        linear-gradient(rgba(23,32,51,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23,32,51,.05) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(to bottom, #000, transparent 80%);
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .shell { position: relative; width: min(1380px, calc(100% - 38px)); margin: 0 auto; padding: 26px 0 54px; }
+    .hero { display: grid; grid-template-columns: 1.18fr .82fr; gap: 20px; margin-bottom: 18px; }
+    .hero-main, .hero-side, .card, .metric, .table-wrap {
+      border: 1px solid rgba(222,208,184,.9);
+      background: var(--card);
+      box-shadow: 0 24px 60px rgba(23,32,51,.12);
+      backdrop-filter: blur(18px);
+    }
+    .hero-main { position: relative; overflow: hidden; border-radius: 30px; padding: 30px; }
+    .hero-main::after { content: "KABU"; position: absolute; right: -12px; bottom: -42px; color: rgba(23,32,51,.06); font: 900 140px/1 var(--mono); letter-spacing: -12px; }
+    .eyebrow { display: inline-flex; padding: 7px 12px; border-radius: 999px; color: var(--accent); background: rgba(191,77,40,.09); border: 1px solid rgba(191,77,40,.22); font: 800 12px/1 var(--mono); letter-spacing: .08em; }
+    h1 { position: relative; z-index: 1; margin: 18px 0 10px; font-size: clamp(34px, 6vw, 74px); line-height: .95; letter-spacing: -.08em; }
+    .lead { position: relative; z-index: 1; max-width: 820px; color: var(--sub); font-size: 15px; line-height: 1.9; }
+    .hero-side { border-radius: 30px; padding: 24px; color: #fff; background: linear-gradient(145deg, rgba(23,32,51,.96), rgba(35,48,73,.92)); display: flex; flex-direction: column; justify-content: space-between; }
+    .side-title { color: #f3d2bd; font: 800 12px/1 var(--mono); letter-spacing: .14em; }
+    .side-line { margin-top: 12px; color: rgba(255,255,255,.82); line-height: 1.75; font-size: 13px; }
+    .proxy-row { display: flex; gap: 10px; margin-top: 18px; }
+    .proxy-row input { flex: 1; min-width: 0; border-color: rgba(255,255,255,.22); color: #fff; background: rgba(255,255,255,.09); }
+    .controls { display: grid; grid-template-columns: 1fr auto; gap: 16px; margin-bottom: 16px; }
+    .card { border-radius: var(--radius); padding: 20px; }
+    .card-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px; font-weight: 900; letter-spacing: -.03em; }
+    .subtle { color: var(--muted); font-size: 12px; font-weight: 600; }
+    .form-grid { display: grid; grid-template-columns: 150px 1fr 135px auto; gap: 11px; align-items: end; }
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    label { color: var(--muted); font: 900 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    input, select { width: 100%; border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; color: var(--ink); background: rgba(255,255,255,.64); outline: none; }
+    input:focus, select:focus { border-color: rgba(191,77,40,.65); box-shadow: 0 0 0 4px rgba(191,77,40,.12); }
+    .check { display: inline-flex; align-items: center; gap: 8px; color: var(--sub); font-size: 13px; user-select: none; }
+    .check input { width: auto; }
+    .actions { display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
+    .btn { border: 0; border-radius: 14px; padding: 11px 15px; font-weight: 900; color: var(--ink); background: #eadcc6; transition: .18s; white-space: nowrap; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(23,32,51,.12); }
+    .btn:disabled { opacity: .55; cursor: wait; transform: none; box-shadow: none; }
+    .primary { color: #fff; background: linear-gradient(135deg, var(--accent), #8f351f); }
+    .green { color: #fff; background: linear-gradient(135deg, #1f7a6d, #0f5148); }
+    .ghost { border: 1px solid rgba(23,32,51,.14); background: rgba(255,255,255,.42); }
+    .danger { color: #fff; background: var(--red); }
+    .small { padding: 7px 10px; border-radius: 10px; font-size: 12px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .metric { border-radius: 19px; padding: 17px; }
+    .metric span { display: block; color: var(--muted); font: 900 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .metric strong { display: block; margin-top: 9px; font: 900 34px/1 var(--mono); letter-spacing: -.06em; }
+    .tabs { display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tab { border: 1px solid rgba(23,32,51,.12); border-radius: 999px; padding: 10px 16px; color: var(--sub); background: rgba(255,255,255,.38); font-weight: 900; }
+    .tab.active { color: #fff; background: var(--ink); border-color: var(--ink); }
+    .panel { display: none; }
+    .panel.active { display: block; animation: reveal .25s ease; }
+    @keyframes reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .table-wrap { border-radius: var(--radius); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 14px; border-bottom: 1px solid rgba(222,208,184,.72); text-align: left; vertical-align: top; font-size: 13px; }
+    th { color: var(--muted); background: rgba(234,220,198,.58); font: 900 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    .ticker { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 999px; color: #fff; background: var(--ink); font: 900 12px/1 var(--mono); }
+    .market { display: inline-flex; margin-left: 6px; padding: 5px 8px; border-radius: 999px; background: rgba(216,155,43,.18); font: 900 11px/1 var(--mono); }
+    .name { margin-top: 8px; color: var(--sub); line-height: 1.45; }
+    .money { font: 900 18px/1 var(--mono); letter-spacing: -.04em; }
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
+    .neutral { color: var(--sub); }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 5px 8px; color: var(--sub); background: rgba(23,32,51,.06); font: 900 11px/1 var(--mono); }
+    .hit { color: #fff; background: var(--red); }
+    .good { color: #fff; background: var(--green); }
+    .warn { color: #fff; background: var(--gold); }
+    .info { color: #fff; background: var(--blue); }
+    .empty { padding: 48px 22px; text-align: center; color: var(--muted); border: 1px dashed rgba(23,32,51,.2); border-radius: var(--radius); background: rgba(255,255,255,.32); }
+    .empty strong { display: block; color: var(--ink); font-size: 20px; margin-bottom: 8px; }
+    .grid-2 { display: grid; grid-template-columns: .88fr 1.12fr; gap: 16px; align-items: start; }
+    .analysis-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 14px 0; }
+    .tile { border: 1px solid var(--line); border-radius: 18px; padding: 14px; background: rgba(255,255,255,.46); }
+    .tile span { display: block; color: var(--muted); font: 900 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .tile strong { display: block; margin-top: 9px; font: 900 23px/1 var(--mono); letter-spacing: -.05em; }
+    .spark { width: 100%; height: 188px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(rgba(23,32,51,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(23,32,51,.04) 1px, transparent 1px), rgba(255,255,255,.42); background-size: 24px 24px; overflow: hidden; }
+    .signals, .ir-list, .log-list { display: grid; gap: 10px; }
+    .signal, .ir-item, .log-item { border: 1px solid var(--line); border-radius: 16px; padding: 12px; background: rgba(255,255,255,.48); line-height: 1.58; }
+    .signal { border-left: 4px solid var(--line); color: var(--sub); }
+    .signal.good { border-left-color: var(--green); background: rgba(22,122,74,.08); color: var(--ink); }
+    .signal.warn { border-left-color: var(--gold); background: rgba(201,139,33,.1); color: var(--ink); }
+    .signal.bad { border-left-color: var(--red); background: rgba(184,51,44,.08); color: var(--ink); }
+    .ir-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: var(--muted); font: 900 11px/1.4 var(--mono); letter-spacing: .04em; }
+    .ir-title { color: var(--ink); font-weight: 900; line-height: 1.55; }
+    .log-item { display: grid; grid-template-columns: 170px 1fr auto; gap: 12px; align-items: center; }
+    .ai-columns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+    .ai-list { margin: 0; padding-left: 18px; color: var(--sub); line-height: 1.65; }
+    .ai-list li + li { margin-top: 6px; }
+    .prompt-box { margin: 12px 0 0; max-height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-word; padding: 14px; border-radius: 18px; border: 1px solid rgba(23,32,51,.12); background: rgba(255,255,255,.72); color: var(--sub); font: 12px/1.75 Consolas, "Yu Gothic", monospace; }
+    .mini-note { margin-top: 12px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .toast { position: fixed; right: 20px; bottom: 20px; z-index: 20; max-width: min(440px, calc(100vw - 40px)); padding: 14px 16px; border-radius: 16px; color: #fff; background: var(--ink); box-shadow: 0 18px 42px rgba(23,32,51,.22); opacity: 0; transform: translateY(12px); pointer-events: none; transition: .2s ease; line-height: 1.55; font-weight: 900; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: var(--red); }
+    .toast.success { background: var(--green); }
+    .toast.warn { background: var(--gold); color: var(--ink); }
+    @media (max-width: 1060px) { .hero, .controls, .grid-2, .ai-columns { grid-template-columns: 1fr; } .form-grid, .metrics, .analysis-grid { grid-template-columns: repeat(2, 1fr); } .actions { justify-content: flex-start; } }
+    @media (max-width: 720px) { .shell { width: min(100% - 22px, 1380px); padding-top: 14px; } .hero-main, .hero-side, .card { border-radius: 20px; padding: 18px; } .form-grid, .metrics, .analysis-grid { grid-template-columns: 1fr; } .table-wrap { overflow-x: auto; } table { min-width: 980px; } .log-item { grid-template-columns: 1fr; } .proxy-row { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-main">
+        <span class="eyebrow">IR AUTOMATION / TECHNICAL LAB</span>
+        <h1>KABU LAB</h1>
+        <p class="lead">指定銘柄のIRを自動取得し、決算関連の開示、PER/PBR/EPS、RSI・移動平均・MACDをまとめて確認する新規ローカルアプリです。IR確認、決算材料の整理、テクニカル分析に絞って使えます。</p>
+      </div>
+      <aside class="hero-side">
+        <div>
+          <div class="side-title">DATA CONNECTION</div>
+          <div class="side-line" id="connectionStatus">プロキシ未確認です。起動用バッチから開くと自動で接続します。</div>
+        </div>
+        <div>
+          <div class="proxy-row">
+            <input id="proxyInput" type="text" value="http://127.0.0.1:8809" aria-label="Proxy URL">
+            <button class="btn green" id="proxyCheckBtn">接続確認</button>
+          </div>
+          <div class="side-line" id="lastRunText">最終更新: まだありません</div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="controls">
+      <div class="card">
+        <div class="card-title"><span>銘柄を追加</span><span class="subtle">日本株は4桁コード、米国株はティッカー</span></div>
+        <div class="form-grid">
+          <div class="field"><label for="codeInput">Code</label><input id="codeInput" type="text" placeholder="7203 / AAPL" autocomplete="off"></div>
+          <div class="field"><label for="nameInput">Name</label><input id="nameInput" type="text" placeholder="任意" autocomplete="off"></div>
+          <div class="field"><label for="marketInput">Market</label><select id="marketInput"><option value="JP">日本株</option><option value="US">米国株</option></select></div>
+          <button class="btn primary" id="addStockBtn">追加</button>
+        </div>
+        <label class="check" style="margin-top:14px;"><input id="autoIrInput" type="checkbox" checked>日本株はTDnet IRを自動取得する</label>
+      </div>
+      <div class="card">
+        <div class="card-title"><span>一括操作</span><span class="subtle">価格とIRは別更新</span></div>
+        <div class="actions">
+          <button class="btn primary" id="refreshAllBtn">価格/分析更新</button>
+          <button class="btn green" id="refreshIrBtn">IR一括更新</button>
+          <button class="btn ghost" id="diagnosticsBtn">接続診断</button>
+          <button class="btn ghost" id="exportBtn">JSON出力</button>
+          <button class="btn ghost" id="importBtn">JSON読込</button>
+          <input id="importFile" type="file" accept=".json,application/json" hidden>
+        </div>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div class="metric"><span>Stocks</span><strong id="metricStocks">0</strong></div>
+      <div class="metric"><span>Analyzed</span><strong id="metricAlerts">0</strong></div>
+      <div class="metric"><span>IR Items</span><strong id="metricIr">0</strong></div>
+      <div class="metric"><span>Errors</span><strong id="metricDeepDrop">0</strong></div>
+    </section>
+
+    <nav class="tabs" aria-label="Main tabs">
+      <button class="tab active" data-tab="portfolio">銘柄ボード</button>
+      <button class="tab" data-tab="ir">IR自動取得</button>
+      <button class="tab" data-tab="analysis">決算/テクニカル分析</button>
+      <button class="tab" data-tab="alerts">通知履歴</button>
+      <button class="tab" data-tab="settings">使い方</button>
+    </nav>
+
+    <section class="panel active" id="panel-portfolio"><div id="portfolioContainer"></div></section>
+    <section class="panel" id="panel-ir">
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title"><span>IRフィルター</span><span class="subtle">TDnet直近31日分から抽出</span></div>
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr auto auto;">
+          <div class="field"><label for="irStockFilter">Stock</label><select id="irStockFilter"></select></div>
+          <div class="field"><label for="irCategoryFilter">Category</label><select id="irCategoryFilter"><option value="all">すべて</option><option value="決算">決算</option><option value="業績予想">業績予想</option><option value="配当/還元">配当/還元</option><option value="自己株式">自己株式</option><option value="月次/KPI">月次/KPI</option><option value="IR資料">IR資料</option><option value="その他">その他</option></select></div>
+          <button class="btn green" id="refreshSelectedIrBtn">選択IR更新</button>
+          <button class="btn ghost" id="clearIrBtn">表示更新</button>
+        </div>
+      </div>
+      <div id="irContainer"></div>
+    </section>
+    <section class="panel" id="panel-analysis">
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title"><span>分析対象</span><span class="subtle">未取得なら更新を実行</span></div>
+        <div class="form-grid" style="grid-template-columns: 1fr auto auto;">
+          <div class="field"><label for="analysisStockSelect">Stock</label><select id="analysisStockSelect"></select></div>
+          <button class="btn primary" id="refreshSelectedAnalysisBtn">選択銘柄を更新</button>
+          <button class="btn ghost" id="openLatestIrBtn">最新IRを開く</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title"><span>投資分析レポート</span><span class="subtle">APIキー不要</span></div>
+        <div class="actions" style="justify-content:flex-start;">
+          <button class="btn primary" id="copyIrPromptBtn">決算IRプロンプトをコピー</button>
+          <button class="btn green" id="runAiAnalysisBtn">分析レポートを生成</button>
+          <button class="btn ghost" id="copyAiMemoBtn">ChatGPT用レポートをコピー</button>
+          <button class="btn ghost" id="clearAiAnalysisBtn">レポート削除</button>
+        </div>
+        <div class="mini-note">最新の決算短信PDF URLを差し込んだChatGPT用プロンプトを作成できます。アプリ内ではAPIキーを使いません。</div>
+      </div>
+      <div id="analysisContainer"></div>
+    </section>
+    <section class="panel" id="panel-alerts">
+      <div class="card" style="margin-bottom:14px;"><div class="card-title"><span>通知履歴</span><button class="btn danger small" id="clearLogBtn">履歴削除</button></div><div class="subtle">新着IRを記録します。</div></div>
+      <div id="alertLogContainer"></div>
+    </section>
+    <section class="panel" id="panel-settings">
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title"><span>投資分析レポートについて</span><span class="subtle">課金不要</span></div>
+        <div class="signals">
+          <div class="signal good">分析レポートは、決算IR、業績予想IR、配当IR、PER/PBR/EPS、直近テクニカルを使ってローカル生成します。</div>
+          <div class="signal">決算短信を深掘りしたい場合は、「決算IRプロンプトをコピー」でWeb版ChatGPTへ貼り付けできます。</div>
+          <div class="signal bad">ローカル分析はルールベースです。未取得データは要確認として表示します。最終判断は必ずIR本文や公式資料で確認してください。</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-title">使い方</div><div class="signals"><div class="signal good">1. start-kabu-lab.bat を起動すると、ローカルプロキシとこの画面が開きます。</div><div class="signal good">2. 銘柄を追加し、「価格/分析更新」で株価・テクニカル指標を取得します。</div><div class="signal good">3. 日本株は「IR一括更新」でTDnetの直近31日分を銘柄コード別に取得できます。</div></div></div>
+        <div class="card"><div class="card-title">データについて</div><div class="signals"><div class="signal">価格、PER/PBR/EPSなどはYahoo Finance系エンドポイントから取得します。</div><div class="signal">IRはTDnet公開ページの直近31日分を対象にします。初期版ではXBRL全文解析ではなく、決算関連IRの抽出と基本指標分析を行います。</div><div class="signal bad">投資判断の最終確認は、必ず各IR PDFや公式情報で行ってください。</div></div></div>
+      </div>
+    </section>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script>
+    const STORAGE_STOCKS = 'kabu_lab_stocks_v1';
+    const STORAGE_LOG = 'kabu_lab_alert_log_v1';
+    const STORAGE_PROXY = 'kabu_lab_proxy_v7';
+    const IR_DAYS = 31;
+    const $ = (id) => document.getElementById(id);
+    let stocks = loadJson(STORAGE_STOCKS, []);
+    let alertLog = loadJson(STORAGE_LOG, []);
+
+    function loadJson(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_STOCKS, JSON.stringify(stocks));
+      localStorage.setItem(STORAGE_LOG, JSON.stringify(alertLog.slice(0, 500)));
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getProxyBase() {
+      return (localStorage.getItem(STORAGE_PROXY) || $('proxyInput')?.value || 'http://127.0.0.1:8809').replace(/\/$/, '');
+    }
+
+    function setProxyBase(value) {
+      const clean = String(value || '').trim().replace(/\/$/, '');
+      if (clean) localStorage.setItem(STORAGE_PROXY, clean);
+      if ($('proxyInput')) $('proxyInput').value = clean || 'http://127.0.0.1:8809';
+    }
+
+    function normalizeCode(input, market) {
+      const raw = String(input || '').trim().toUpperCase();
+      if (market === 'JP') return raw.replace(/\.T$/i, '').replace(/[^\d]/g, '').slice(0, 4);
+      return raw.replace(/\s+/g, '').replace(/[^A-Z0-9.\-=^]/g, '');
+    }
+
+    function normalizeStock(stock) {
+      stock.id ??= Date.now() + Math.random();
+      stock.market = stock.market === 'US' ? 'US' : 'JP';
+      stock.code = normalizeCode(stock.code || stock.symbol || '', stock.market);
+      stock.name = stock.name || stock.code;
+      stock.autoIr = stock.market === 'JP' ? stock.autoIr !== false : false;
+      stock.irItems = Array.isArray(stock.irItems) ? stock.irItems.map(normalizeIrItem) : [];
+      stock.chartPoints = Array.isArray(stock.chartPoints) ? stock.chartPoints : [];
+      stock.fundamentals = stock.fundamentals || {};
+      stock.aiAnalysis = stock.aiAnalysis || null;
+      stock.aiError ??= null;
+      stock.aiLoading = !!stock.aiLoading;
+      stock.irPrompt = stock.irPrompt || null;
+      stock.irPromptError ??= null;
+      stock.warning ??= null;
+      delete stock.activeDropLevels;
+      delete stock.yearHigh;
+      delete stock.yearHighDate;
+      delete stock.yearLow;
+      delete stock.yearLowDate;
+      return stock;
+    }
+
+    function yahooSymbol(stock) {
+      return stock.market === 'JP' ? `${stock.code}.T` : stock.code;
+    }
+
+    function formatPrice(value, stock) {
+      if (value == null || isNaN(value)) return '未取得';
+      const currency = stock?.currency || (stock?.market === 'JP' ? 'JPY' : 'USD');
+      const prefix = currency === 'JPY' ? '¥' : '$';
+      const maxFrac = currency === 'JPY' ? 0 : 2;
+      return prefix + Number(value).toLocaleString('ja-JP', { maximumFractionDigits: maxFrac });
+    }
+
+    function formatPct(value, digits = 2) {
+      if (value == null || isNaN(value)) return '未取得';
+      const sign = value > 0 ? '+' : '';
+      return `${sign}${Number(value).toFixed(digits)}%`;
+    }
+
+    function formatCompact(value) {
+      if (value == null || isNaN(value)) return '未取得';
+      const n = Number(value);
+      if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(2)}兆`;
+      if (n >= 100_000_000) return `${(n / 100_000_000).toFixed(1)}億`;
+      if (n >= 10_000) return `${(n / 10_000).toFixed(1)}万`;
+      return n.toLocaleString('ja-JP');
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return '未取得';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return String(iso);
+      return d.toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function showToast(message, type = '') {
+      const el = $('toast');
+      el.textContent = message;
+      el.className = `toast ${type} show`;
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => el.classList.remove('show'), 3600);
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.top = '-9999px';
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(area);
+      if (!ok) throw new Error('copy command failed');
+    }
+
+    async function apiGet(path, timeoutMs = 25000) {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(`${getProxyBase()}${path}`, { signal: controller.signal, cache: 'no-store' });
+        if (!response.ok) {
+          const text = await response.text().catch(() => '');
+          throw new Error(`HTTP ${response.status} ${text.slice(0, 160)}`);
+        }
+        return await response.json();
+      } finally {
+        window.clearTimeout(timer);
+      }
+    }
+
+    async function checkProxy() {
+      setProxyBase($('proxyInput').value);
+      try {
+        const data = await apiGet('/health', 2500);
+        $('connectionStatus').textContent = `接続OK: ${getProxyBase()} / v${data.version || 'unknown'} / ${formatDateTime(data.time)}`;
+        showToast('ローカルプロキシに接続しました', 'success');
+        return true;
+      } catch (error) {
+        $('connectionStatus').textContent = `接続NG: ${error.message}`;
+        showToast('プロキシに接続できません。start-kabu-lab.bat から起動してください。', 'error');
+        return false;
+      }
+    }
+
+    function setLastRun(text) {
+      $('lastRunText').textContent = `最終更新: ${text} / ${new Date().toLocaleTimeString('ja-JP')}`;
+    }
+
+    function addLog(entry) {
+      alertLog.unshift({ id: Date.now() + Math.random(), time: new Date().toISOString(), ...entry });
+      alertLog = alertLog.slice(0, 500);
+      saveState();
+    }
+
+    function addStockFromForm() {
+      const market = $('marketInput').value;
+      const code = normalizeCode($('codeInput').value, market);
+      const name = $('nameInput').value.trim();
+      if (!code || (market === 'JP' && code.length !== 4)) {
+        showToast(market === 'JP' ? '日本株は4桁コードを入力してください' : 'ティッカーを入力してください', 'error');
+        return;
+      }
+      if (stocks.some((s) => s.market === market && s.code === code)) {
+        showToast('この銘柄はすでに登録されています', 'warn');
+        return;
+      }
+      const stock = normalizeStock({ id: Date.now(), code, name: name || code, market, autoIr: market === 'JP' && $('autoIrInput').checked, createdAt: new Date().toISOString() });
+      stocks.push(stock);
+      saveState();
+      $('codeInput').value = '';
+      $('nameInput').value = '';
+      renderAll();
+      showToast(`${stock.code} を追加しました`, 'success');
+      refreshOne(stock.id);
+    }
+
+    async function fetchQuote(stock) {
+      const data = await apiGet(`/yahoo/quote?symbol=${encodeURIComponent(yahooSymbol(stock))}`, 22000);
+      const q = data?.quoteResponse?.result?.[0];
+      if (!q) throw new Error('Yahoo quoteが空でした');
+      const price = q.regularMarketPrice ?? q.postMarketPrice ?? q.preMarketPrice;
+      if (price != null && !isNaN(price)) stock.price = Number(price);
+      const prevClose = q.regularMarketPreviousClose ?? q.previousClose ?? null;
+      if (prevClose != null && !isNaN(prevClose)) stock.prevClose = Number(prevClose);
+      else if (price != null && !isNaN(price)) stock.prevClose = null;
+      stock.currency = q.currency || stock.currency || (stock.market === 'JP' ? 'JPY' : 'USD');
+      stock.marketState = q.marketState || stock.marketState || 'CLOSED';
+      stock.quoteFetchedAt = new Date().toISOString();
+      if ((!stock.name || stock.name === stock.code) && (q.shortName || q.longName)) stock.name = q.shortName || q.longName;
+      stock.fundamentals = {
+        ...stock.fundamentals,
+        per: q.trailingPE ?? q.forwardPE ?? stock.fundamentals?.per ?? null,
+        pbr: q.priceToBook ?? stock.fundamentals?.pbr ?? null,
+        eps: q.epsTrailingTwelveMonths ?? q.epsForward ?? stock.fundamentals?.eps ?? null,
+        marketCap: q.marketCap ?? stock.fundamentals?.marketCap ?? null,
+        dividendYield: q.dividendYield ?? q.trailingAnnualDividendYield ?? stock.fundamentals?.dividendYield ?? null,
+        beta: q.beta ?? stock.fundamentals?.beta ?? null
+      };
+    }
+
+    async function fetchCompanyName(stock) {
+      if (!isPlaceholderName(stock)) return false;
+      const data = await apiGet(`/name?code=${encodeURIComponent(stock.code)}&market=${encodeURIComponent(stock.market)}`, 20000);
+      if (!data?.name) return false;
+      stock.name = cleanCompanyName(data.name);
+      return true;
+    }
+
+    async function fetchChart(stock) {
+      const data = await apiGet(`/yahoo/chart?symbol=${encodeURIComponent(yahooSymbol(stock))}&range=1y&interval=1d`, 36000);
+      const result = data?.chart?.result?.[0];
+      if (!result) throw new Error('Yahoo chartが空でした');
+      const meta = result.meta || {};
+      const q = result.indicators?.quote?.[0] || {};
+      const timestamps = result.timestamp || [];
+      const points = [];
+      for (let i = 0; i < timestamps.length; i++) {
+        const close = q.close?.[i];
+        if (close == null || isNaN(close)) continue;
+        points.push({
+          date: new Date(timestamps[i] * 1000).toISOString().slice(0, 10),
+          close: Number(close),
+          high: q.high?.[i] != null ? Number(q.high[i]) : Number(close),
+          low: q.low?.[i] != null ? Number(q.low[i]) : Number(close),
+          volume: q.volume?.[i] != null ? Number(q.volume[i]) : null
+        });
+      }
+      if (!points.length) throw new Error('日足データがありません');
+      stock.chartPoints = points.slice(-270);
+      const quoteTime = stock.quoteFetchedAt ? new Date(stock.quoteFetchedAt).getTime() : NaN;
+      const hasFreshQuote = !isNaN(quoteTime) && Date.now() - quoteTime < 2 * 60 * 1000;
+      const chartPrice = meta.regularMarketPrice ?? points[points.length - 1].close ?? null;
+      const chartPrevClose = meta.previousClose ?? meta.chartPreviousClose ?? null;
+      if (!hasFreshQuote && chartPrice != null && !isNaN(chartPrice)) stock.price = Number(chartPrice);
+      if (!hasFreshQuote && chartPrevClose != null && !isNaN(chartPrevClose)) stock.prevClose = Number(chartPrevClose);
+      else if (!hasFreshQuote && chartPrice != null && !isNaN(chartPrice)) stock.prevClose = null;
+      stock.currency = stock.currency || meta.currency || (stock.market === 'JP' ? 'JPY' : 'USD');
+      stock.marketState = stock.marketState || meta.marketState || 'CLOSED';
+      stock.chartFetchedAt = new Date().toISOString();
+      stock.technical = buildTechnical(stock);
+    }
+
+    async function fetchIr(stock, options = {}) {
+      normalizeStock(stock);
+      if (stock.market !== 'JP') {
+        stock.irError = 'TDnet IR取得は日本株のみ対応です';
+        return [];
+      }
+      const oldIds = new Set((stock.irItems || []).map((item) => item.id));
+      const hadFetched = !!stock.irFetchedAt;
+      const data = await apiGet(`/tdnet/ir?code=${encodeURIComponent(stock.code)}&days=${IR_DAYS}`, 52000);
+      const items = Array.isArray(data.items) ? data.items.map(normalizeIrItem) : [];
+      stock.irItems = items;
+      stock.irFetchedAt = data.fetchedAt || new Date().toISOString();
+      stock.irError = null;
+      applyNameFromIr(stock, items);
+      const newItems = items.filter((item) => !oldIds.has(item.id));
+      if (hadFetched && newItems.length && !options.silent) {
+        addLog({ type: 'ir', code: stock.code, name: stock.name, message: `新着IR ${newItems.length}件: ${newItems[0].title}`, level: 'info' });
+        showToast(`${stock.code} 新着IR ${newItems.length}件`, 'success');
+      }
+      return items;
+    }
+
+    async function refreshStock(stock, options = {}) {
+      normalizeStock(stock);
+      const errors = [];
+      let quoteOk = false;
+      let chartOk = false;
+      try {
+        await fetchCompanyName(stock);
+      } catch (error) {
+        errors.push(`name: ${error.message}`);
+      }
+      try {
+        await fetchQuote(stock);
+        quoteOk = true;
+      } catch (error) {
+        errors.push(`quote: ${error.message}`);
+      }
+      try {
+        await fetchChart(stock);
+        chartOk = true;
+      } catch (error) {
+        errors.push(`chart: ${error.message}`);
+      }
+      stock.error = quoteOk || chartOk ? null : errors.join(' / ');
+      stock.warning = quoteOk && chartOk ? null : errors.join(' / ');
+      const shouldFetchIr = options.withIr && stock.market === 'JP' && (stock.autoIr || options.forceIr);
+      if (shouldFetchIr) {
+        try { await fetchIr(stock, options); } catch (error) { stock.irError = error.message; }
+      }
+      saveState();
+    }
+
+    async function refreshOne(id) {
+      const stock = stocks.find((s) => String(s.id) === String(id));
+      if (!stock) return;
+      setLastRun(`${stock.code} 更新中...`);
+      await refreshStock(stock, { withIr: true, forceIr: true });
+      setLastRun(`${stock.code} 更新完了`);
+      renderAll();
+    }
+
+    async function refreshAll(options = {}) {
+      if (!stocks.length) return showToast('銘柄がありません', 'warn');
+      const btn = $('refreshAllBtn');
+      const old = btn.textContent;
+      btn.disabled = true;
+      let failed = 0;
+      for (let i = 0; i < stocks.length; i++) {
+        const stock = stocks[i];
+        btn.textContent = `更新中 ${i + 1}/${stocks.length}`;
+        setLastRun(`${stock.code} 価格/分析更新中`);
+        await refreshStock(stock, { withIr: false, silent: options.silent });
+        if (stock.error) failed++;
+        renderAll();
+      }
+      btn.disabled = false;
+      btn.textContent = old;
+      setLastRun(`価格/分析更新完了 ${stocks.length - failed}/${stocks.length}`);
+      showToast(failed ? `更新完了: ${stocks.length - failed}/${stocks.length}件成功` : '価格/分析を更新しました', failed ? 'warn' : 'success');
+    }
+
+    async function refreshAllIr(options = {}) {
+      const targets = stocks.filter((s) => s.market === 'JP' && (!options.silent || s.autoIr));
+      if (!targets.length) {
+        return showToast(options.silent ? 'IR自動取得がONの日本株がありません' : '日本株がありません', 'warn');
+      }
+      const btn = $('refreshIrBtn');
+      const old = btn.textContent;
+      btn.disabled = true;
+      let failed = 0;
+      for (let i = 0; i < targets.length; i++) {
+        const stock = targets[i];
+        btn.textContent = `IR ${i + 1}/${targets.length}`;
+        setLastRun(`${stock.code} IR取得中`);
+        try { await fetchIr(stock, options); } catch (error) { stock.irError = error.message; failed++; }
+        saveState();
+        renderAll();
+      }
+      btn.disabled = false;
+      btn.textContent = old;
+      setLastRun(`IR更新完了 ${targets.length - failed}/${targets.length}`);
+      showToast(failed ? `IR更新完了: ${targets.length - failed}/${targets.length}件成功` : 'IRを更新しました', failed ? 'warn' : 'success');
+    }
+
+    async function runDiagnostics() {
+      const lines = [];
+      const tests = [
+        { label: 'proxy', path: '/health', timeout: 3000 },
+        { label: 'name 7203', path: '/name?code=7203&market=JP', timeout: 20000 },
+        { label: 'chart 7203.T', path: '/yahoo/chart?symbol=7203.T&range=1y&interval=1d', timeout: 45000 },
+        { label: 'quote 7203.T', path: '/yahoo/quote?symbol=7203.T', timeout: 30000 },
+        { label: 'IR 7203', path: '/tdnet/ir?code=7203&days=31', timeout: 60000 }
+      ];
+
+      showToast('接続診断を実行中です', 'warn');
+      for (const test of tests) {
+        try {
+          const data = await apiGet(test.path, test.timeout);
+          if (test.label.startsWith('chart')) {
+            const result = data?.chart?.result?.[0];
+            const count = result?.timestamp?.length || 0;
+            const source = result?.meta?.exchangeName || result?.meta?.symbol || 'chart';
+            lines.push(`${test.label}: OK (${count}本 / ${source})`);
+          } else if (test.label.startsWith('name')) {
+            lines.push(`${test.label}: OK (${data.name || '名称なし'})`);
+          } else if (test.label.startsWith('quote')) {
+            const count = data?.quoteResponse?.result?.length || 0;
+            lines.push(`${test.label}: OK (${count}件)`);
+          } else if (test.label.startsWith('IR')) {
+            lines.push(`${test.label}: OK (${data.count ?? 0}件)`);
+          } else {
+            lines.push(`${test.label}: OK (v${data.version || 'unknown'})`);
+          }
+        } catch (error) {
+          lines.push(`${test.label}: NG ${error.message}`);
+        }
+      }
+      alert(lines.join('\n'));
+    }
+
+    function avg(values) {
+      const clean = values.filter((v) => v != null && !isNaN(v));
+      return clean.length ? clean.reduce((a, b) => a + b, 0) / clean.length : null;
+    }
+
+    function stdev(values) {
+      const mean = avg(values);
+      if (mean == null) return null;
+      const clean = values.filter((v) => v != null && !isNaN(v));
+      if (clean.length < 2) return null;
+      const variance = clean.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / (clean.length - 1);
+      return Math.sqrt(variance);
+    }
+
+    function latest(values) {
+      for (let i = values.length - 1; i >= 0; i--) {
+        if (values[i] != null && !isNaN(values[i])) return values[i];
+      }
+      return null;
+    }
+
+    function sma(closes, period) {
+      return closes.length < period ? null : avg(closes.slice(-period));
+    }
+
+    function emaSeries(values, period) {
+      const out = Array(values.length).fill(null);
+      if (values.length < period) return out;
+      let seed = avg(values.slice(0, period));
+      out[period - 1] = seed;
+      const k = 2 / (period + 1);
+      for (let i = period; i < values.length; i++) {
+        seed = values[i] * k + seed * (1 - k);
+        out[i] = seed;
+      }
+      return out;
+    }
+
+    function rsiSeries(closes, period = 14) {
+      const out = Array(closes.length).fill(null);
+      if (closes.length < period + 1) return out;
+      let gains = 0, losses = 0;
+      for (let i = 1; i <= period; i++) {
+        const diff = closes[i] - closes[i - 1];
+        if (diff >= 0) gains += diff;
+        else losses -= diff;
+      }
+      let avgGain = gains / period;
+      let avgLoss = losses / period;
+      out[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+      for (let i = period + 1; i < closes.length; i++) {
+        const diff = closes[i] - closes[i - 1];
+        const gain = Math.max(diff, 0);
+        const loss = Math.max(-diff, 0);
+        avgGain = (avgGain * (period - 1) + gain) / period;
+        avgLoss = (avgLoss * (period - 1) + loss) / period;
+        out[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+      }
+      return out;
+    }
+
+    function macdSnapshot(closes) {
+      if (closes.length < 35) return { macd: null, signal: null, histogram: null };
+      const ema12 = emaSeries(closes, 12);
+      const ema26 = emaSeries(closes, 26);
+      const macd = closes.map((_, i) => ema12[i] != null && ema26[i] != null ? ema12[i] - ema26[i] : null);
+      const compact = macd.filter((v) => v != null);
+      const signalCompact = emaSeries(compact, 9);
+      const macdLatest = latest(macd);
+      const signalLatest = latest(signalCompact);
+      return { macd: macdLatest, signal: signalLatest, histogram: macdLatest != null && signalLatest != null ? macdLatest - signalLatest : null };
+    }
+
+    function buildTechnical(stock) {
+      const points = (stock.chartPoints || []).filter((p) => p.close != null);
+      const closes = points.map((p) => p.close);
+      if (closes.length < 5) return null;
+      const price = stock.price ?? closes[closes.length - 1];
+      const returns = [];
+      for (let i = Math.max(1, closes.length - 20); i < closes.length; i++) returns.push(Math.log(closes[i] / closes[i - 1]));
+      const rsi = latest(rsiSeries(closes, 14));
+      const macd = macdSnapshot(closes);
+      const recent20 = points.slice(-20);
+      const support20 = recent20.length ? Math.min(...recent20.map((p) => p.low ?? p.close)) : null;
+      const resistance20 = recent20.length ? Math.max(...recent20.map((p) => p.high ?? p.close)) : null;
+      const sma5 = sma(closes, 5);
+      const sma25 = sma(closes, 25);
+      const sma75 = sma(closes, 75);
+      const vol = stdev(returns);
+      const annualVol = vol != null ? vol * Math.sqrt(252) * 100 : null;
+      let score = 50;
+      if (sma25 != null) score += price >= sma25 ? 10 : -10;
+      if (sma25 != null && sma75 != null) score += sma25 >= sma75 ? 10 : -10;
+      if (rsi != null) {
+        if (rsi <= 30) score += 8;
+        else if (rsi >= 70) score -= 8;
+        else if (rsi >= 45 && rsi <= 60) score += 4;
+      }
+      if (macd.histogram != null) score += macd.histogram >= 0 ? 8 : -8;
+      score = Math.max(0, Math.min(100, Math.round(score)));
+      const trend = price >= (sma25 ?? price) && (sma25 ?? 0) >= (sma75 ?? 0)
+        ? '上昇トレンド'
+        : price < (sma25 ?? price) && (sma25 ?? 0) < (sma75 ?? Number.POSITIVE_INFINITY)
+          ? '下降トレンド'
+          : '中立';
+      return { price, sma5, sma25, sma75, rsi, macd, support20, resistance20, annualVol, score, trend, updatedAt: new Date().toISOString() };
+    }
+
+    function metricTile(label, value) {
+      return `<div class="tile"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
+    }
+
+    function findLatestIr(stock, category) {
+      return (stock.irItems || []).find((item) => item.category === category) || null;
+    }
+
+    function isEarningsIr(item) {
+      const title = item?.title || '';
+      if (/有価証券報告書|四半期報告書|臨時報告書|内部統制報告書|統合報告書|事業報告|決算説明|決算補足|説明資料|補足資料|質疑応答|Annual Report|Securities Report|Quarterly Report|Extraordinary Report|Integrated Report|Presentation|Supplementary|Q&A/i.test(title)) {
+        return false;
+      }
+      return /決算短信|四半期決算短信|中間決算短信|Financial Results|Consolidated Financial Results|Summary of Financial Results|Financial Statements/i.test(title);
+    }
+
+    function findLatestEarningsIr(stock) {
+      return (stock.irItems || []).find(isEarningsIr) || null;
+    }
+
+    function isPlaceholderName(stock) {
+      return !stock.name || stock.name === stock.code || stock.name === yahooSymbol(stock);
+    }
+
+    function cleanCompanyName(name) {
+      return String(name || '')
+        .replace(/\s+/g, ' ')
+        .replace(/\(株\)/g, '株式会社')
+        .replace(/㈱/g, '株式会社')
+        .trim();
+    }
+
+    function applyNameFromIr(stock, items) {
+      if (!isPlaceholderName(stock)) return false;
+      const found = (items || []).find((item) => item.name && item.name !== item.code);
+      if (!found) return false;
+      stock.name = cleanCompanyName(found.name);
+      return true;
+    }
+
+    function priceChangeForDays(stock, days) {
+      const points = (stock.chartPoints || []).filter((p) => p.close != null);
+      if (points.length <= days) return null;
+      const latestPoint = points[points.length - 1];
+      const basePoint = points[points.length - 1 - days];
+      if (!latestPoint?.close || !basePoint?.close) return null;
+      return ((latestPoint.close - basePoint.close) / basePoint.close) * 100;
+    }
+
+    function buildAiStockPayload(stock) {
+      const technical = stock.technical || buildTechnical(stock) || {};
+      const points = (stock.chartPoints || []).filter((p) => p.close != null);
+      const recentIr = (stock.irItems || []).slice(0, 8).map((item) => ({
+        date: item.date,
+        time: item.time || '',
+        category: item.category || '',
+        title: item.title || '',
+        exchange: item.exchange || '',
+        url: item.url || ''
+      }));
+      return {
+        code: stock.code,
+        name: stock.name || stock.code,
+        market: stock.market,
+        symbol: yahooSymbol(stock),
+        currency: stock.currency || (stock.market === 'JP' ? 'JPY' : 'USD'),
+        price: stock.price ?? null,
+        prevClose: stock.prevClose ?? null,
+        marketState: stock.marketState || '',
+        quoteFetchedAt: stock.quoteFetchedAt || null,
+        chartFetchedAt: stock.chartFetchedAt || null,
+        warning: stock.warning || null,
+        error: stock.error || null,
+        dataCoverage: {
+          chartPoints: points.length,
+          irItems: (stock.irItems || []).length,
+          shownIrItems: recentIr.length
+        },
+        fundamentals: {
+          per: stock.fundamentals?.per ?? null,
+          pbr: stock.fundamentals?.pbr ?? null,
+          eps: stock.fundamentals?.eps ?? null,
+          marketCap: stock.fundamentals?.marketCap ?? null,
+          dividendYield: stock.fundamentals?.dividendYield ?? null,
+          beta: stock.fundamentals?.beta ?? null
+        },
+        technical: {
+          score: technical.score ?? null,
+          trend: technical.trend || '',
+          rsi14: technical.rsi ?? null,
+          sma5: technical.sma5 ?? null,
+          sma25: technical.sma25 ?? null,
+          sma75: technical.sma75 ?? null,
+          macdHistogram: technical.macd?.histogram ?? null,
+          support20: technical.support20 ?? null,
+          resistance20: technical.resistance20 ?? null,
+          annualVolatility: technical.annualVol ?? null
+        },
+        performance: {
+          change1d: stock.price != null && stock.prevClose ? ((stock.price - stock.prevClose) / stock.prevClose) * 100 : null,
+          change5d: priceChangeForDays(stock, 5),
+          change20d: priceChangeForDays(stock, 20),
+          change60d: priceChangeForDays(stock, 60)
+        },
+        recentIr
+      };
+    }
+
+    function pushUnique(list, text) {
+      if (!text) return;
+      if (!list.includes(text)) list.push(text);
+    }
+
+    function formatMultiple(value, digits = 2) {
+      if (value == null || isNaN(value)) return '未取得';
+      return `${Number(value).toFixed(digits)}x`;
+    }
+
+    function formatPlainNumber(value, digits = 2) {
+      if (value == null || isNaN(value)) return '未取得';
+      return Number(value).toLocaleString('ja-JP', { maximumFractionDigits: digits });
+    }
+
+    function formatDividendYield(value) {
+      if (value == null || isNaN(value)) return '未取得';
+      const pct = Number(value) < 1 ? Number(value) * 100 : Number(value);
+      return `${pct.toFixed(2)}%`;
+    }
+
+    function describePer(per) {
+      if (per == null || isNaN(per)) return 'PERは未取得です。利益水準に対する割安/割高判断は保留します。';
+      const n = Number(per);
+      if (n <= 0) return 'PERが0以下のため、赤字または特殊要因の可能性があります。通常のPER評価は難しいです。';
+      if (n <= 15) return 'PERは15倍以下で、利益水準に対する評価は相対的に軽めです。ただし利益の持続性確認が必要です。';
+      if (n >= 30) return 'PERは30倍以上で、成長期待が織り込まれやすい水準です。決算未達時のバリュエーション収縮に注意します。';
+      return 'PERは極端な割安/割高シグナルではありません。同業平均と過去平均での確認が必要です。';
+    }
+
+    function describePbr(pbr) {
+      if (pbr == null || isNaN(pbr)) return 'PBRは未取得です。純資産倍率での評価は保留します。';
+      const n = Number(pbr);
+      if (n <= 1) return 'PBRは1倍以下で、資産面では割高感が強くありません。一方でROEや成長性が低い可能性も確認が必要です。';
+      if (n >= 3) return 'PBRは3倍以上で、資本効率や成長期待への評価が高めです。ROEの持続性が重要です。';
+      return 'PBRは中立圏です。ROE、自己資本比率、資本政策と合わせて評価します。';
+    }
+
+    function reportSection(title, items) {
+      return { title, items: (items || []).filter(Boolean) };
+    }
+
+    function formatIrLine(item) {
+      if (!item) return '未取得';
+      return `${item.date || '日付不明'} ${item.category || 'IR'}: ${item.title || 'タイトル未取得'}`;
+    }
+
+    function buildLocalAnalysis(stock) {
+      const payload = buildAiStockPayload(stock);
+      const facts = [];
+      const positives = [];
+      const risks = [];
+      const irFocus = [];
+      const nextChecks = [];
+      const unknowns = [];
+      const latestEarningsIr = payload.recentIr.find((item) => (item.category || '').includes('決算')) || null;
+      const latestForecastIr = payload.recentIr.find((item) => (item.category || '').includes('業績予想')) || null;
+      const latestDividendIr = payload.recentIr.find((item) => (item.category || '').includes('配当')) || null;
+      const earningsIrCount = payload.recentIr.filter((item) => ['決算', '業績予想', '配当/還元'].includes(item.category)).length;
+      const hasForecastUp = !!(latestForecastIr && /上方修正|増額|上振れ|引き上げ/.test(latestForecastIr.title));
+      const hasForecastDown = !!(latestForecastIr && /下方修正|減額|下振れ|引き下げ/.test(latestForecastIr.title));
+      const hasDividendIncrease = !!(latestDividendIr && /増配/.test(latestDividendIr.title));
+      const hasDividendCut = !!(latestDividendIr && /減配|無配/.test(latestDividendIr.title));
+      const priceText = payload.price == null ? '未取得' : formatPrice(payload.price, stock);
+      const quoteDateText = formatDateTime(payload.quoteFetchedAt || payload.chartFetchedAt);
+      const dataSources = [
+        `株価・PER/PBR/EPS・時価総額: Yahoo Finance系 quote/chart（取得時刻: ${quoteDateText}）`,
+        `IR: TDnet直近31日分およびYahoo Finance disclosure（保存済みIR: ${payload.dataCoverage.irItems}件、表示対象: ${payload.dataCoverage.shownIrItems}件）`,
+        `テクニカル: 日足 ${payload.dataCoverage.chartPoints}本からアプリ内でRSI/SMA/MACD/年率Volを計算`
+      ];
+
+      if (payload.price != null) pushUnique(facts, `現在値は ${formatPrice(payload.price, stock)} です。`);
+      if (payload.performance.change1d != null) pushUnique(facts, `前日比は ${formatPct(payload.performance.change1d)} です。`);
+      if (payload.fundamentals.per != null) pushUnique(facts, `PER は ${Number(payload.fundamentals.per).toFixed(2)}x です。`);
+      else pushUnique(unknowns, 'PER が未取得です。');
+      if (payload.fundamentals.pbr != null) pushUnique(facts, `PBR は ${Number(payload.fundamentals.pbr).toFixed(2)}x です。`);
+      else pushUnique(unknowns, 'PBR が未取得です。');
+      if (latestEarningsIr) pushUnique(facts, `直近の決算IRは ${latestEarningsIr.date} の「${latestEarningsIr.title}」です。`);
+      else pushUnique(unknowns, '直近の決算IRがまだ取得できていません。');
+      if (latestForecastIr) pushUnique(facts, `業績予想関連IRは ${latestForecastIr.date} に確認できます。`);
+      if (latestDividendIr) pushUnique(facts, `配当関連IRは ${latestDividendIr.date} に確認できます。`);
+      if (earningsIrCount) pushUnique(facts, `決算系IRは直近で ${earningsIrCount} 件あります。`);
+      else if (payload.recentIr.length) pushUnique(unknowns, '直近IRはありますが、決算系IRはまだ少ないです。');
+      else pushUnique(unknowns, '直近IRがまだ取得できていません。');
+
+      if (payload.fundamentals.per != null) {
+        if (payload.fundamentals.per <= 15) pushUnique(positives, `PER ${Number(payload.fundamentals.per).toFixed(1)}x で、利益水準に対する評価は重すぎません。`);
+        if (payload.fundamentals.per >= 30) pushUnique(risks, `PER ${Number(payload.fundamentals.per).toFixed(1)}x で、期待先行の評価になっている可能性があります。`);
+      }
+      if (payload.fundamentals.pbr != null) {
+        if (payload.fundamentals.pbr <= 1) pushUnique(positives, `PBR ${Number(payload.fundamentals.pbr).toFixed(2)}x で、資産面では割高感が強くありません。`);
+        if (payload.fundamentals.pbr >= 3) pushUnique(risks, `PBR ${Number(payload.fundamentals.pbr).toFixed(2)}x で、純資産比では高めの評価です。`);
+      }
+      if (payload.performance.change20d != null) {
+        if (payload.performance.change20d >= 8) pushUnique(positives, `20営業日で ${formatPct(payload.performance.change20d)} と上向きです。`);
+        if (payload.performance.change20d <= -8) pushUnique(risks, `20営業日で ${formatPct(payload.performance.change20d)} と下落基調です。`);
+      }
+      if (latestForecastIr) {
+        if (/上方修正|増額/.test(latestForecastIr.title)) pushUnique(positives, '直近の業績予想IRで上方修正・増額の可能性があります。');
+        if (/下方修正|減額/.test(latestForecastIr.title)) pushUnique(risks, '直近の業績予想IRで下方修正・減額の可能性があります。');
+      }
+      if (latestDividendIr) {
+        if (hasDividendIncrease) pushUnique(positives, '直近の配当IRで増配の動きが確認できます。');
+        if (hasDividendCut) pushUnique(risks, '直近の配当IRで株主還元の弱まりに注意です。');
+      }
+      if (payload.technical.score != null) {
+        if (payload.technical.score >= 65) pushUnique(positives, `テクニカルスコア ${payload.technical.score} で、短中期は比較的強めです。`);
+        if (payload.technical.score <= 40) pushUnique(risks, `テクニカルスコア ${payload.technical.score} で、短中期は弱めです。`);
+      }
+      if (payload.technical.rsi14 != null) {
+        if (payload.technical.rsi14 <= 30) pushUnique(positives, `RSI ${payload.technical.rsi14.toFixed(1)} で、売られすぎ圏を意識できます。`);
+        if (payload.technical.rsi14 >= 70) pushUnique(risks, `RSI ${payload.technical.rsi14.toFixed(1)} で、過熱感に注意です。`);
+      }
+      if (payload.technical.macdHistogram != null) {
+        if (payload.technical.macdHistogram >= 0) pushUnique(positives, 'MACDヒストグラムはプラス圏です。');
+        else pushUnique(risks, 'MACDヒストグラムはマイナス圏です。');
+      }
+      if (payload.technical.annualVolatility != null && payload.technical.annualVolatility >= 35) {
+        pushUnique(risks, `年率ボラティリティ ${payload.technical.annualVolatility.toFixed(1)}% と値動きは大きめです。`);
+      }
+
+      for (const item of payload.recentIr.slice(0, 5)) {
+        pushUnique(irFocus, `${item.date} ${item.category || 'IR'}: ${item.title}`);
+        if ((item.category || '').includes('決算')) pushUnique(nextChecks, '決算IRで売上、営業利益、通期進捗率を確認する。');
+        if ((item.category || '').includes('業績予想')) pushUnique(nextChecks, '業績予想IRで上方修正か下方修正か、前提条件の変化を確認する。');
+        if ((item.category || '').includes('配当')) pushUnique(nextChecks, '配当IRで配当性向、DOE、増配継続性を確認する。');
+      }
+
+      if (!nextChecks.length) {
+        pushUnique(nextChecks, '直近決算IR本文で売上、営業利益、純利益、通期進捗率を確認する。');
+        pushUnique(nextChecks, '次回決算までの進捗を月次や主要KPIで追う。');
+      }
+      pushUnique(nextChecks, '決算説明資料がある場合は、会社計画の前提条件とリスク要因を確認する。');
+      pushUnique(nextChecks, '売上成長率、営業利益率、FCF、ROE/ROIC、自己資本比率を3〜5年で並べて確認する。');
+
+      if (!positives.length) pushUnique(positives, '足元で強いポジティブ要因は限定的です。');
+      if (!risks.length) pushUnique(risks, '現時点で目立つ悪材料は限定的です。');
+
+      const technicalView = payload.technical.score == null
+        ? 'チャートデータが十分でなく、テクニカル判断は補助的です。'
+        : `トレンドは ${payload.technical.trend || '未判定'}、スコアは ${payload.technical.score} です。決算確認を主軸にしつつ、株価の地合いは ${payload.technical.score >= 65 ? '比較的強め' : payload.technical.score <= 40 ? 'やや弱め' : '中立圏'} と見ます。`;
+
+      const confidenceScore =
+        (payload.price != null ? 1 : 0) +
+        (payload.technical.score != null ? 1 : 0) +
+        ((payload.fundamentals.per != null || payload.fundamentals.pbr != null) ? 1 : 0) +
+        (payload.recentIr.length ? 1 : 0);
+      const confidence = confidenceScore >= 4 ? '高' : confidenceScore >= 2 ? '中' : '低';
+
+      pushUnique(unknowns, '売上成長率、粗利益率、営業利益率、FCF、ROE/ROIC、自己資本比率は現バージョンでは未取得です。最新決算短信・有価証券報告書で確認してください。');
+      pushUnique(unknowns, '事業セグメント、市場シェア、主要競合、過去平均PER/PBR、同業比較、PSR、EV/EBITDAは未取得です。');
+      if (!payload.quoteFetchedAt && !payload.chartFetchedAt) pushUnique(unknowns, '株価データの取得時刻が未確認です。データが古い可能性があります。');
+
+      const summaryParts = [];
+      if (latestEarningsIr) summaryParts.push(`直近の決算IRは ${latestEarningsIr.date} 公表です。`);
+      else summaryParts.push('直近の決算IR確認がまだ不十分です。');
+      if (latestForecastIr) summaryParts.push(`業績予想IRも ${latestForecastIr.date} 時点で確認できます。`);
+      if (positives[0]) summaryParts.push(positives[0]);
+      if (risks[0]) summaryParts.push(risks[0]);
+      const summary = summaryParts.join(' ');
+
+      let stanceScore = 0;
+      if (hasForecastUp) stanceScore += 2;
+      if (hasForecastDown) stanceScore -= 2;
+      if (hasDividendIncrease) stanceScore += 1;
+      if (hasDividendCut) stanceScore -= 2;
+      if (payload.fundamentals.per != null && Number(payload.fundamentals.per) > 0 && Number(payload.fundamentals.per) <= 15) stanceScore += 1;
+      if (payload.fundamentals.per != null && Number(payload.fundamentals.per) >= 30) stanceScore -= 1;
+      if (payload.fundamentals.pbr != null && Number(payload.fundamentals.pbr) <= 1) stanceScore += 1;
+      if (payload.fundamentals.pbr != null && Number(payload.fundamentals.pbr) >= 3) stanceScore -= 1;
+      if (payload.technical.score != null && payload.technical.score >= 65) stanceScore += 1;
+      if (payload.technical.score != null && payload.technical.score <= 40) stanceScore -= 1;
+      if (confidence === '低') stanceScore -= 1;
+
+      let stance = '中立';
+      if (stanceScore >= 6 && confidence === '高') stance = '積極買い';
+      else if (stanceScore >= 2 && confidence !== '低') stance = '買い';
+      else if (stanceScore <= -4 && confidence !== '低') stance = '売り';
+      else if (stanceScore <= -2 || confidence === '低') stance = '様子見';
+      const stanceReason = `決算・バリュエーション・テクニカルのローカルスコアは ${stanceScore} です。主な根拠は「${positives[0]}」、主な注意点は「${risks[0]}」。ただし未取得データがあるため、IR本文での確認を前提にします。`;
+
+      const bullCase = [];
+      if (hasForecastUp) pushUnique(bullCase, `業績予想IR「${latestForecastIr.title}」が上方修正/増額系で、次決算への期待を支えます。`);
+      if (hasDividendIncrease) pushUnique(bullCase, `配当IR「${latestDividendIr.title}」に増配要素があり、株主還元が評価される可能性があります。`);
+      if (payload.fundamentals.per != null && Number(payload.fundamentals.per) > 0 && Number(payload.fundamentals.per) <= 15) pushUnique(bullCase, `PER ${Number(payload.fundamentals.per).toFixed(1)}x は利益水準対比で過度に高くありません。`);
+      if (payload.fundamentals.pbr != null && Number(payload.fundamentals.pbr) <= 1) pushUnique(bullCase, `PBR ${Number(payload.fundamentals.pbr).toFixed(2)}x は資産面の下支え材料になり得ます。`);
+      if (payload.technical.score != null && payload.technical.score >= 65) pushUnique(bullCase, `テクニカルスコア ${payload.technical.score} で株価モメンタムは比較的良好です。`);
+      pushUnique(bullCase, '次回決算で売上YoY、営業利益率、通期進捗率が会社計画を上回れば、評価見直しの余地があります。');
+
+      const bearCase = [];
+      if (hasForecastDown) pushUnique(bearCase, `業績予想IR「${latestForecastIr.title}」が下方修正/減額系で、利益見通しの悪化に注意します。`);
+      if (hasDividendCut) pushUnique(bearCase, `配当IR「${latestDividendIr.title}」に減配/無配要素があり、株主還元面の評価低下に注意します。`);
+      if (payload.fundamentals.per != null && Number(payload.fundamentals.per) >= 30) pushUnique(bearCase, `PER ${Number(payload.fundamentals.per).toFixed(1)}x は期待先行になりやすく、決算失望時の下落余地があります。`);
+      if (payload.fundamentals.pbr != null && Number(payload.fundamentals.pbr) >= 3) pushUnique(bearCase, `PBR ${Number(payload.fundamentals.pbr).toFixed(2)}x は資本効率の鈍化に弱い評価水準です。`);
+      if (payload.technical.score != null && payload.technical.score <= 40) pushUnique(bearCase, `テクニカルスコア ${payload.technical.score} で株価モメンタムは弱めです。`);
+      pushUnique(bearCase, '売上成長率、利益率、FCF、ROE/ROICが未確認のため、表面指標だけで割安と判断するリスクがあります。');
+
+      const riskMatrix = [
+        `決算未達・下方修正リスク: 発生確率 ${hasForecastDown ? '中〜高' : '中'} / 影響度 高。次回決算の売上YoY、営業利益、通期進捗率が焦点です。`,
+        `バリュエーション収縮リスク: 発生確率 ${payload.fundamentals.per != null && Number(payload.fundamentals.per) >= 30 ? '中〜高' : '中'} / 影響度 ${payload.fundamentals.per != null && Number(payload.fundamentals.per) >= 30 ? '高' : '中'}。PER/PBRが市場期待を反映している可能性があります。`,
+        `株価モメンタム悪化リスク: 発生確率 ${payload.technical.score != null && payload.technical.score <= 40 ? '中〜高' : '中'} / 影響度 中。25日線、75日線、RSI、MACDの悪化を監視します。`,
+        `株主還元後退リスク: 発生確率 ${hasDividendCut ? '中〜高' : '低〜中'} / 影響度 中。配当方針、配当性向、DOEの確認が必要です。`,
+        `情報不足リスク: 発生確率 中 / 影響度 中。事業セグメント、競合、FCF、ROE/ROIC、負債状況が未取得です。`
+      ];
+
+      const keyIndicators = [
+        '売上高YoY、営業利益YoY、営業利益率、会社計画に対する通期進捗率',
+        `EPS（取得値: ${formatPlainNumber(payload.fundamentals.eps)}）とPER（取得値: ${formatMultiple(payload.fundamentals.per)}）の変化`,
+        'FCF、ROE/ROIC、自己資本比率、Net Debtなど財務健全性指標',
+        `配当利回り（取得値: ${formatDividendYield(payload.fundamentals.dividendYield)}）、配当性向、増配/減配の有無`,
+        `テクニカル: RSI ${payload.technical.rsi14 == null ? '未取得' : payload.technical.rsi14.toFixed(1)}、25日線 ${payload.technical.sma25 == null ? '未取得' : formatPrice(payload.technical.sma25, stock)}、75日線 ${payload.technical.sma75 == null ? '未取得' : formatPrice(payload.technical.sma75, stock)}`
+      ];
+
+      const financialTone = hasForecastDown
+        ? '悪化リスクあり'
+        : hasForecastUp || hasDividendIncrease
+          ? '改善確認候補'
+          : latestEarningsIr
+            ? '未判定だが決算IR確認可能'
+            : '未判定';
+
+      const sections = [
+        reportSection('1. 事業概要（Business Overview）', [
+          `企業名: ${payload.name}（証券コード: ${payload.code}、現在株価: ${priceText}）`,
+          '事業内容、主な収益モデル、事業セグメントは現バージョンでは未取得です。会社HP、決算説明資料、有価証券報告書で確認してください。',
+          `成長の軸は、まず直近決算IR「${latestEarningsIr ? latestEarningsIr.title : '未取得'}」と業績予想IR「${latestForecastIr ? latestForecastIr.title : '未取得'}」で、売上成長、営業利益率、通期計画の前提を確認するのが妥当です。`,
+          `データソース: ${dataSources.join(' / ')}`
+        ]),
+        reportSection('2. 財務健全性（Financial Health）', [
+          '売上成長率（YoY）: 未取得。最新決算短信の売上高前年差で確認が必要です。',
+          `利益率: 粗利益率・営業利益率は未取得。補助データとしてEPS ${formatPlainNumber(payload.fundamentals.eps)}、PER ${formatMultiple(payload.fundamentals.per)} を取得済みです。`,
+          'フリーキャッシュフロー、ROE/ROIC、自己資本比率、Net Debtは未取得です。財務健全性の最終評価には決算短信・有報のBS/CF確認が必要です。',
+          `3〜5年トレンド評価: ${financialTone}。根拠は直近IR件数 ${earningsIrCount}件、業績予想IR ${latestForecastIr ? latestForecastIr.date : '未取得'}、配当IR ${latestDividendIr ? latestDividendIr.date : '未取得'} です。`,
+          `配当利回り: ${formatDividendYield(payload.fundamentals.dividendYield)}。配当性向と継続性は未取得のため、配当方針IRで確認します。`
+        ]),
+        reportSection('3. 競争力と業界ポジション（Competitive Position）', [
+          '市場シェア、主要競合、同業比較は未取得です。現時点では断定せず、決算説明資料の市場規模・シェア記載を一次情報として確認します。',
+          'Moat（ブランド、ネットワーク効果、コスト優位性、スイッチングコスト）は未判定です。営業利益率、ROIC、顧客継続率、価格決定力のデータが必要です。',
+          '5フォース分析: 新規参入脅威、代替品、供給者・購買者の交渉力、競争の激しさはいずれも未判定です。事業内容取得後に業界別に評価します。',
+          '暫定評価として、決算で利益率が安定しROICが資本コストを上回る場合は競争優位がある可能性、逆に利益率低下が続く場合は競争激化リスクと見ます。'
+        ]),
+        reportSection('4. バリュエーション（Valuation）', [
+          `PER: ${formatMultiple(payload.fundamentals.per)}。${describePer(payload.fundamentals.per)}`,
+          `PBR: ${formatMultiple(payload.fundamentals.pbr)}。${describePbr(payload.fundamentals.pbr)}`,
+          `時価総額: ${formatCompact(payload.fundamentals.marketCap)}、EPS: ${formatPlainNumber(payload.fundamentals.eps)}、配当利回り: ${formatDividendYield(payload.fundamentals.dividendYield)}。`,
+          'PSR、EV/EBITDA、過去平均PER/PBR、同業他社比較は未取得です。割安/割高の最終判断は保留し、同業平均と過去5年レンジで確認します。'
+        ]),
+        reportSection('5. マクロ・外部環境とリスク（Macro & Risks）', [
+          'PEST: 政治は規制・政策変更、経済は金利・為替・景気循環、社会は需要構造や人口動態、技術はDX/AI/自動化/代替技術を確認対象にします。事業内容未取得のため業界固有リスクは未判定です。',
+          ...riskMatrix,
+          `今後のカタリスト: 次回決算、業績予想修正、配当方針変更、決算説明資料、月次/KPI開示。直近IRは「${formatIrLine(payload.recentIr[0])}」です。`
+        ]),
+        reportSection('6. 総合評価と投資判断', [
+          `Bull Case: ${bullCase.join(' / ')}`,
+          `Bear Case: ${bearCase.join(' / ')}`,
+          `投資スタンス（分析上の暫定）: ${stance}。${stanceReason}`,
+          `監視すべきキー指標: ${keyIndicators.join(' / ')}`,
+          `Confidence Level: ${confidence}。株価・テクニカル・基本指標・IRの取得状況をもとに判定しています。未取得データが多い場合は保守的に低くします。`
+        ])
+      ];
+
+      return {
+        summary,
+        sections,
+        facts: facts.slice(0, 6),
+        positives: positives.slice(0, 5),
+        risks: risks.slice(0, 5),
+        bull_case: bullCase.slice(0, 5),
+        bear_case: bearCase.slice(0, 5),
+        risk_matrix: riskMatrix,
+        key_indicators: keyIndicators,
+        stance,
+        stance_reason: stanceReason,
+        data_sources: dataSources,
+        technical_view: technicalView,
+        ir_focus: irFocus.slice(0, 5),
+        next_checks: nextChecks.slice(0, 5),
+        unknowns: unknowns.slice(0, 5),
+        confidence,
+        disclaimer: 'これは投資助言ではなく、あくまで分析材料です。最終判断は自己責任で行ってください。',
+        model: 'LOCAL_RULES',
+        generatedAt: new Date().toISOString()
+      };
+    }
+
+    function buildChatGptMemoText(stock) {
+      const payload = buildAiStockPayload(stock);
+      const analysis = stock.aiAnalysis || buildLocalAnalysis(stock);
+      const irLines = payload.recentIr.length
+        ? payload.recentIr.map((item) => `- ${item.date} ${item.category || 'IR'} ${item.title}`).join('\n')
+        : '- 直近IRなし';
+      const sectionLines = Array.isArray(analysis.sections)
+        ? analysis.sections.map((section) => [
+          section.title,
+          ...(section.items || []).map((item) => `- ${item}`)
+        ].join('\n')).join('\n\n')
+        : '未生成';
+      return [
+        'あなたは経験豊富なエクイティリサーチアナリスト（15年以上の経験）として、以下の企業について包括的な投資分析レポートを作成してください。',
+        '',
+        `企業名: ${payload.name}（証券コード: ${payload.code}、現在株価: ${payload.price == null ? '未取得' : formatPrice(payload.price, stock)}）`,
+        '',
+        '必ず具体的な数値・根拠・データソースに言及してください。データが古い、または未取得の可能性がある場合は明記してください。Bull CaseとBear Caseを公平に提示してください。',
+        'これは投資助言ではなく、あくまで分析材料です。最終判断は自己責任で行う前提です。',
+        '',
+        '取得済みデータ:',
+        `- 市場: ${payload.market}`,
+        `- 現在値: ${payload.price == null ? '未取得' : formatPrice(payload.price, stock)}`,
+        `- 前日比: ${payload.performance.change1d == null ? '未取得' : formatPct(payload.performance.change1d)}`,
+        `- 5営業日: ${payload.performance.change5d == null ? '未取得' : formatPct(payload.performance.change5d)}`,
+        `- 20営業日: ${payload.performance.change20d == null ? '未取得' : formatPct(payload.performance.change20d)}`,
+        `- PER: ${formatMultiple(payload.fundamentals.per)}`,
+        `- PBR: ${formatMultiple(payload.fundamentals.pbr)}`,
+        `- EPS: ${formatPlainNumber(payload.fundamentals.eps)}`,
+        `- 時価総額: ${formatCompact(payload.fundamentals.marketCap)}`,
+        `- 配当利回り: ${formatDividendYield(payload.fundamentals.dividendYield)}`,
+        `- RSI(14): ${payload.technical.rsi14 == null ? '未取得' : payload.technical.rsi14.toFixed(1)}`,
+        `- SMA25: ${payload.technical.sma25 == null ? '未取得' : formatPrice(payload.technical.sma25, stock)}`,
+        `- SMA75: ${payload.technical.sma75 == null ? '未取得' : formatPrice(payload.technical.sma75, stock)}`,
+        `- MACD Hist: ${payload.technical.macdHistogram == null ? '未取得' : payload.technical.macdHistogram.toFixed(3)}`,
+        `- テクニカルスコア: ${payload.technical.score == null ? '未取得' : payload.technical.score}`,
+        '',
+        'データソース:',
+        ...(analysis.data_sources || []).map((source) => `- ${source}`),
+        '直近IR:',
+        irLines,
+        '',
+        'アプリ内ローカル分析レポート:',
+        sectionLines,
+        '',
+        '以下の構造で、事実と推測を分け、未取得データは未取得と明記して日本語で再整理してください。',
+        '1. 事業概要（Business Overview）',
+        '2. 財務健全性（Financial Health）',
+        '3. 競争力と業界ポジション（Competitive Position）',
+        '4. バリュエーション（Valuation）',
+        '5. マクロ・外部環境とリスク（Macro & Risks）',
+        '6. 総合評価と投資判断'
+      ].join('\n');
+    }
+
+    function companyNameForPrompt(stock) {
+      const name = cleanCompanyName(stock?.name || stock?.code || '');
+      return name || stock?.code || '未取得';
+    }
+
+    function extractEarningsPeriod(item) {
+      const title = String(item?.title || '').replace(/\s+/g, ' ').trim();
+      const beforeKessan = title.split(/決算短信|Financial Results|Consolidated Financial Results|Summary of Financial Results|Financial Statements/i)[0]?.trim();
+      if (beforeKessan) return beforeKessan.replace(/[【】\[\]「」]/g, '').trim();
+      const jp = title.match(/\d{4}年\s*\d{1,2}月期[^〔（(【]*/);
+      if (jp) return jp[0].trim();
+      const en = title.match(/(?:for|ended)\s+(.+)$/i);
+      if (en) return en[1].trim();
+      return item?.date ? `${item.date} 開示分（タイトルから決算期を要確認）` : 'タイトルから決算期を要確認';
+    }
+
+    function buildEarningsIrPrompt(stock, item) {
+      const company = companyNameForPrompt(stock);
+      const code = stock?.code || '未取得';
+      const period = extractEarningsPeriod(item);
+      const pdfUrl = item?.url || '未取得';
+      const title = item?.title || '未取得';
+      const disclosedAt = [item?.date, item?.time].filter(Boolean).join(' ') || '未取得';
+      const price = stock?.price == null ? '未取得' : formatPrice(stock.price, stock);
+      return [
+        'あなたは10年以上の経験を持つ辛口の機関投資家向け株式アナリストです。',
+        '',
+        '以下の決算短信（または決算資料）の全文を丁寧に読み込んで、以下のフォーマットで分析レポートを作成してください。',
+        '',
+        '【入力情報】',
+        `株式会社: ${company}`,
+        `会社コード: ${code}`,
+        `期間: ${period}`,
+        `PDF URL: ${pdfUrl}`,
+        `IRタイトル: ${title}`,
+        `開示日時: ${disclosedAt}`,
+        `現在株価: ${price}`,
+        '',
+        `【企業名・決算期】：${company}（証券コード: ${code}、${period}）`,
+        '',
+        '1. 【業績ハイライト】',
+        '   - 売上高・営業利益・経常利益・純利益の前年同期比（YoY）と前四半期比（QoQ）の増減率',
+        '   - 主な増減要因を一言で（何が売れたか、何が足を引っ張ったか）',
+        '',
+        '2. 【サプライズ分析】',
+        '   - 市場コンセンサス（会社予想やアナリスト予想）との比較（上方/下方/ほぼ想定内）',
+        '   - 特に驚いたポイント',
+        '',
+        '3. 【セグメント・事業別分析】',
+        '   - 成長事業と減速事業の明確化',
+        '   - 利益率の変化とその理由',
+        '',
+        '4. 【ガイダンス・通期見通し】',
+        '   - 会社予想の修正の有無（上方修正/下方修正/据え置き）',
+        '   - 進捗率と過去の傾向との比較',
+        '   - 経営陣のトーン（強気・慎重・中立的）',
+        '',
+        '5. 【財務健全性】',
+        '   - 自己資本比率、流動比率、有利子負債の状況',
+        '   - キャッシュフローの健全性（営業CF、フリーキャッシュフロー）',
+        '',
+        '6. 【ポジティブ要素 / ネガティブ要素】',
+        '   - 強気材料（新製品、株主還元、コスト改善など）',
+        '   - 懸念材料（コスト増、在庫積み上がり、競争激化など）',
+        '',
+        '7. 【投資判断のポイント】',
+        '   - この決算で最も注目すべきポイント3つ',
+        '   - 短期（1-3ヶ月）と中期（6-12ヶ月）の株価への影響予想',
+        '   - 現在の株価水準に対する印象（割安感・割高感・フェア）',
+        '',
+        '分析は客観的かつ批判的に。数字は正確に。投資助言ではなく、あくまで分析材料としてまとめてください。',
+        '',
+        '注意: PDF URLを直接開けない場合は、こちらにPDF本文を貼るよう依頼してください。'
+      ].join('\n');
+    }
+
+    function renderAiList(items) {
+      const list = Array.isArray(items) ? items.filter(Boolean) : [];
+      if (!list.length) return '<div class="subtle">未取得</div>';
+      return `<ul class="ai-list">${list.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+    }
+
+    function renderAiSections(sections) {
+      const list = Array.isArray(sections) ? sections.filter((section) => section && section.title) : [];
+      if (!list.length) return '';
+      return `<div class="signals" style="margin-top:12px;">${list.map((section) => `<div class="signal"><strong>${escapeHtml(section.title)}</strong>${renderAiList(section.items)}</div>`).join('')}</div>`;
+    }
+
+    function renderIrPromptCard(stock) {
+      const prompt = stock.irPrompt;
+      const latest = findLatestEarningsIr(stock);
+      if (stock.irPromptError && !prompt) {
+        return `<div class="card" style="margin-top:16px;"><div class="card-title"><span>決算IRプロンプト</span><span class="subtle">error</span></div><div class="signal bad">${escapeHtml(stock.irPromptError)}</div></div>`;
+      }
+      if (!prompt) {
+        return `<div class="card" style="margin-top:16px;"><div class="card-title"><span>決算IRプロンプト</span><span class="subtle">ready</span></div><div class="empty"><strong>プロンプトはまだ作成されていません</strong>${latest ? escapeHtml(`${latest.date} ${latest.title} のPDF URLを入れて作成できます。`) : '先にIR更新を実行してください。'}</div></div>`;
+      }
+      return `<div class="card" style="margin-top:16px;">
+        <div class="card-title"><span>決算IRプロンプト</span><span class="subtle">${formatDateTime(prompt.generatedAt)}</span></div>
+        ${stock.irPromptError ? `<div class="signal bad">${escapeHtml(stock.irPromptError)}</div>` : ''}
+        <div class="signals">
+          <div class="signal info"><strong>${escapeHtml(prompt.item?.date || '')} ${escapeHtml(prompt.item?.title || '')}</strong>${prompt.item?.url ? `<div style="margin-top:8px;"><a href="${escapeHtml(prompt.item.url)}" target="_blank" rel="noopener noreferrer">PDFを開く</a></div>` : ''}</div>
+        </div>
+        <pre class="prompt-box">${escapeHtml(prompt.text || '')}</pre>
+        <div class="mini-note">上の内容は「決算IRプロンプトをコピー」ボタンでクリップボードに入ります。ChatGPT Webなどへ貼り付けて使ってください。</div>
+      </div>`;
+    }
+
+    function renderAiAnalysisCard(stock) {
+      const ai = stock.aiAnalysis;
+      if (stock.aiLoading) {
+        return `<div class="card" style="margin-top:16px;"><div class="card-title"><span>投資分析レポート</span><span class="subtle">running</span></div><div class="signal info">決算重視のローカル分析レポートを生成中です。</div></div>`;
+      }
+      if (stock.aiError && !ai) {
+        return `<div class="card" style="margin-top:16px;"><div class="card-title"><span>投資分析レポート</span><span class="subtle">error</span></div><div class="signal bad">${escapeHtml(stock.aiError)}</div></div>`;
+      }
+      if (!ai) {
+        return `<div class="card" style="margin-top:16px;"><div class="card-title"><span>投資分析レポート</span><span class="subtle">ready</span></div><div class="empty"><strong>分析レポートはまだありません</strong>選択中銘柄の決算IR、業績予想、配当IRを優先してレポートを生成できます。</div></div>`;
+      }
+      const stanceClass = ai.stance === '買い' || ai.stance === '積極買い' ? 'good' : ai.stance === '売り' || ai.stance === '様子見' ? 'warn' : '';
+      return `<div class="card" style="margin-top:16px;">
+        <div class="card-title"><span>投資分析レポート</span><span class="subtle">${escapeHtml(ai.model || '')} / ${formatDateTime(ai.generatedAt)}</span></div>
+        ${stock.aiError ? `<div class="signal bad">${escapeHtml(stock.aiError)}</div>` : ''}
+        <div class="signals">
+          <div class="signal info"><strong>総評</strong><div style="margin-top:8px;">${escapeHtml(ai.summary || '未取得')}</div></div>
+          <div class="signal ${stanceClass}"><strong>投資スタンス（暫定）: ${escapeHtml(ai.stance || '未判定')}</strong><div style="margin-top:8px;">${escapeHtml(ai.stance_reason || '未取得')}</div></div>
+        </div>
+        ${renderAiSections(ai.sections)}
+        <div class="ai-columns">
+          <div class="signals">
+            <div class="signal good"><strong>Bull Case</strong>${renderAiList(ai.bull_case || ai.positives)}</div>
+            <div class="signal"><strong>確認できる事実</strong>${renderAiList(ai.facts)}</div>
+            <div class="signal"><strong>IRで注目すべき点</strong>${renderAiList(ai.ir_focus)}</div>
+          </div>
+          <div class="signals">
+            <div class="signal warn"><strong>Bear Case</strong>${renderAiList(ai.bear_case || ai.risks)}</div>
+            <div class="signal warn"><strong>リスク上位</strong>${renderAiList(ai.risk_matrix || ai.risks)}</div>
+            <div class="signal"><strong>テクニカル所見</strong><div style="margin-top:8px;">${escapeHtml(ai.technical_view || '未取得')}</div></div>
+          </div>
+        </div>
+        <div class="signals" style="margin-top:12px;">
+          <div class="signal"><strong>次決算で監視するキー指標</strong>${renderAiList(ai.key_indicators || ai.next_checks)}</div>
+          <div class="signal"><strong>データソース</strong>${renderAiList(ai.data_sources)}</div>
+        </div>
+        ${(Array.isArray(ai.unknowns) && ai.unknowns.length) ? `<div class="signals" style="margin-top:12px;"><div class="signal warn"><strong>不明点</strong>${renderAiList(ai.unknowns)}</div></div>` : ''}
+        <div class="mini-note">Confidence: ${escapeHtml(ai.confidence || 'unknown')} / ${escapeHtml(ai.disclaimer || '')}</div>
+      </div>`;
+    }
+
+    function normalizeIrItem(item) {
+      return {
+        ...item,
+        category: item.category && item.category !== 'other' && item.category !== 'kpi'
+          ? item.category
+          : categorizeIrTitle(item.title || '')
+      };
+    }
+
+    function categorizeIrTitle(title) {
+      if (/決算短信|四半期決算|決算補足|決算説明|決算発表|Financial Report|Consolidated Financial|Quarter.*FY|FY\s*\d{4}/i.test(title)) return '決算';
+      if (/業績予想|上方修正|下方修正|通期予想|修正/.test(title)) return '業績予想';
+      if (/配当|剰余金|株主優待/.test(title)) return '配当/還元';
+      if (/自己株|自社株/.test(title)) return '自己株式';
+      if (/月次|売上|主要KPI|KPI/.test(title)) return '月次/KPI';
+      if (/説明資料|IR資料|投資家/.test(title)) return 'IR資料';
+      return 'その他';
+    }
+
+    function renderSparkline(points) {
+      const clean = (points || []).filter((p) => p.close != null).slice(-120);
+      if (clean.length < 2) return '<div class="empty" style="border:0;background:transparent;">チャートデータが不足しています</div>';
+      const w = 760, h = 188, pad = 16;
+      const closes = clean.map((p) => p.close);
+      const min = Math.min(...closes), max = Math.max(...closes), span = max - min || 1;
+      const coords = clean.map((p, i) => {
+        const x = pad + (i / (clean.length - 1)) * (w - pad * 2);
+        const y = h - pad - ((p.close - min) / span) * (h - pad * 2);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      const color = clean[clean.length - 1].close >= clean[0].close ? '#167a4a' : '#b8332c';
+      return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="none"><polyline points="${coords}" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>`;
+    }
+
+    function renderAll() {
+      stocks = stocks.map(normalizeStock).filter((s) => s.code);
+      renderMetrics();
+      renderPortfolio();
+      renderSelects();
+      renderIr();
+      renderAnalysis();
+      renderAlertLog();
+    }
+
+    function renderMetrics() {
+      const irCount = stocks.reduce((sum, stock) => sum + (stock.irItems || []).length, 0);
+      const analyzed = stocks.filter((stock) => stock.technical).length;
+      const errors = stocks.filter((stock) => stock.error).length;
+      $('metricStocks').textContent = stocks.length;
+      $('metricAlerts').textContent = analyzed;
+      $('metricIr').textContent = irCount;
+      $('metricDeepDrop').textContent = errors;
+    }
+
+    function renderPortfolio() {
+      const container = $('portfolioContainer');
+      if (!stocks.length) {
+        container.innerHTML = `<div class="empty"><strong>銘柄がまだありません</strong>まずは 7203 や AAPL などを追加してください。</div>`;
+        return;
+      }
+      const rows = stocks.map((stock) => {
+        const changePct = stock.price != null && stock.prevClose ? ((stock.price - stock.prevClose) / stock.prevClose) * 100 : null;
+        const latestIr = (stock.irItems || [])[0];
+        const technical = stock.technical || buildTechnical(stock);
+        stock.technical = technical;
+        const techChip = technical
+          ? `<span class="chip ${technical.score >= 65 ? 'good' : technical.score <= 40 ? 'warn' : 'info'}">${technical.trend} ${technical.score}</span>`
+          : '<span class="chip">分析待ち</span>';
+        return `<tr>
+          <td><span class="ticker">${escapeHtml(stock.code)}</span><span class="market">${stock.market}</span><div class="name">${escapeHtml(stock.name || stock.code)}<br><span class="subtle">${escapeHtml(yahooSymbol(stock))}</span></div>${stock.error ? `<div class="chip hit" title="${escapeHtml(stock.error)}">価格取得エラー</div>` : stock.warning ? `<div class="chip warn" title="${escapeHtml(stock.warning)}">基本指標未取得</div>` : ''}</td>
+          <td><div class="money">${formatPrice(stock.price, stock)}</div><div class="${changePct == null ? 'neutral' : changePct >= 0 ? 'positive' : 'negative'}">${formatPct(changePct)}</div><div class="subtle">${escapeHtml(stock.marketState || '')} / ${formatDateTime(stock.quoteFetchedAt || stock.chartFetchedAt)}</div></td>
+          <td>${techChip}<div class="subtle" style="margin-top:7px;">RSI ${technical?.rsi == null ? '未取得' : technical.rsi.toFixed(1)}</div></td>
+          <td><label class="check"><input type="checkbox" ${stock.autoIr ? 'checked' : ''} ${stock.market !== 'JP' ? 'disabled' : ''} onchange="toggleAutoIr('${stock.id}', this.checked)">IR自動</label><div class="subtle" style="margin-top:7px;">${latestIr ? escapeHtml(latestIr.date + ' ' + latestIr.category) : (stock.irError ? escapeHtml(stock.irError) : 'IR未取得')}</div></td>
+          <td><div class="actions" style="justify-content:flex-start;"><button class="btn small primary" onclick="refreshOne('${stock.id}')">更新</button><button class="btn small green" onclick="focusAnalysis('${stock.id}')">分析</button><button class="btn small ghost" onclick="focusIr('${stock.id}')">IR</button><button class="btn small danger" onclick="removeStock('${stock.id}')">削除</button></div></td>
+        </tr>`;
+      }).join('');
+      container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>銘柄</th><th>現在値</th><th>テクニカル</th><th>IR</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+
+    function renderSelects() {
+      const stockOptions = stocks.length
+        ? stocks.map((s) => `<option value="${escapeHtml(String(s.id))}">${escapeHtml(s.code)} - ${escapeHtml(s.name || s.code)}</option>`).join('')
+        : '<option value="">銘柄がありません</option>';
+      for (const select of [$('irStockFilter'), $('analysisStockSelect')]) {
+        if (!select) continue;
+        const current = select.value;
+        select.innerHTML = stockOptions;
+        if (current && stocks.some((s) => String(s.id) === current)) select.value = current;
+      }
+    }
+
+    function renderIr() {
+      const container = $('irContainer');
+      const stockId = $('irStockFilter')?.value;
+      const category = $('irCategoryFilter')?.value || 'all';
+      const list = [];
+      const targetStocks = stockId ? stocks.filter((s) => String(s.id) === stockId) : stocks;
+      for (const stock of targetStocks) {
+        for (const item of stock.irItems || []) {
+          if (category !== 'all' && item.category !== category) continue;
+          list.push({ stock, item });
+        }
+      }
+      list.sort((a, b) => String(b.item.date + b.item.time).localeCompare(String(a.item.date + a.item.time)));
+      if (!list.length) {
+        container.innerHTML = `<div class="empty"><strong>IRデータがありません</strong>日本株を追加して「IR一括更新」または「選択IR更新」を実行してください。</div>`;
+        return;
+      }
+      container.innerHTML = `<div class="ir-list">${list.map(({ stock, item }) => `<article class="ir-item"><div class="ir-head"><span>${escapeHtml(item.date)} ${escapeHtml(item.time || '')} / ${escapeHtml(stock.code)} ${escapeHtml(stock.name || '')}</span><span class="chip info">${escapeHtml(item.category || 'その他')}</span></div><div class="ir-title">${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>` : escapeHtml(item.title)}</div><div class="subtle" style="margin-top:8px;">${escapeHtml(item.exchange || '')}</div></article>`).join('')}</div>`;
+    }
+
+    function renderAnalysis() {
+      const container = $('analysisContainer');
+      const stockId = $('analysisStockSelect')?.value;
+      const stock = stocks.find((s) => String(s.id) === String(stockId)) || stocks[0];
+      if (!stock) {
+        container.innerHTML = `<div class="empty"><strong>分析対象がありません</strong>銘柄を追加してください。</div>`;
+        return;
+      }
+      const technical = stock.technical || buildTechnical(stock);
+      stock.technical = technical;
+      const f = stock.fundamentals || {};
+      /*
+      container.innerHTML = `<div class="grid-2">
+        <div class="card"><div class="card-title"><span>${escapeHtml(stock.code)} 決算・基本指標</span><span class="subtle">${formatDateTime(stock.quoteFetchedAt)}</span></div>
+          <div class="analysis-grid">${metricTile('PER', f.per == null ? '未取得' : Number(f.per).toFixed(2) + 'x')}${metricTile('PBR', f.pbr == null ? '未取得' : Number(f.pbr).toFixed(2) + 'x')}${metricTile('EPS', f.eps == null ? '未取得' : Number(f.eps).toFixed(2))}${metricTile('時価総額', formatCompact(f.marketCap))}</div>
+          <div class="signals">${renderFundamentalSignals(stock)}${renderIrSignal('最新決算IR', findLatestIr(stock, '決算'))}${renderIrSignal('業績予想IR', findLatestIr(stock, '業績予想'))}${renderIrSignal('配当/還元IR', findLatestIr(stock, '配当/還元'))}</div>
+        </div>
+        <div class="card"><div class="card-title"><span>テクニカル分析</span><span class="subtle">${technical ? technical.trend + ' / Score ' + technical.score : '未取得'}</span></div>${technical ? renderTechnicalBlock(stock, technical) : `<div class="empty"><strong>チャート未取得</strong>「選択銘柄を更新」または「価格/分析更新」を実行してください。</div>`}</div>
+      </div>`;
+      */
+    }
+
+    function renderFundamentalSignals(stock) {
+      const f = stock.fundamentals || {};
+      const signals = [];
+      if (f.per != null) {
+        if (f.per <= 15) signals.push(['good', `PER ${Number(f.per).toFixed(1)}x: 割安寄りの可能性があります。`]);
+        else if (f.per >= 30) signals.push(['warn', `PER ${Number(f.per).toFixed(1)}x: 成長期待が高く、決算失望時の下落に注意です。`]);
+        else signals.push(['', `PER ${Number(f.per).toFixed(1)}x: 極端な割高/割安シグナルではありません。`]);
+      }
+      if (f.pbr != null) signals.push([f.pbr <= 1 ? 'good' : '', `PBR ${Number(f.pbr).toFixed(2)}x: ROEや資本政策と合わせて確認します。`]);
+      if (f.dividendYield != null) {
+        const y = Number(f.dividendYield);
+        const pct = y < 1 ? y * 100 : y;
+        signals.push([pct >= 3 ? 'good' : '', `配当利回り ${pct.toFixed(2)}%: 配当方針と直近IRを確認してください。`]);
+      }
+      if (!signals.length) signals.push(['warn', 'PER/PBR/EPSが未取得です。Yahoo側で指標が提供されていない可能性があります。']);
+      return signals.map(([cls, text]) => `<div class="signal ${cls}">${escapeHtml(text)}</div>`).join('');
+    }
+
+    function renderIrSignal(label, item) {
+      if (!item) return `<div class="signal warn">${escapeHtml(label)}: 直近31日分では見つかりません。</div>`;
+      const title = `${label}: ${item.date} ${item.title}`;
+      return `<div class="signal good">${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>` : escapeHtml(title)}</div>`;
+    }
+
+    function renderTechnicalBlock(stock, t) {
+      const macdText = t.macd.histogram == null ? '未取得' : t.macd.histogram.toFixed(3);
+      return `<div class="spark">${renderSparkline(stock.chartPoints || [])}</div>
+        <div class="analysis-grid">${metricTile('RSI(14)', t.rsi == null ? '未取得' : t.rsi.toFixed(1))}${metricTile('SMA25', formatPrice(t.sma25, stock))}${metricTile('SMA75', formatPrice(t.sma75, stock))}${metricTile('MACD Hist', macdText)}${metricTile('20日支持線', formatPrice(t.support20, stock))}${metricTile('20日抵抗線', formatPrice(t.resistance20, stock))}${metricTile('年率Vol', t.annualVol == null ? '未取得' : t.annualVol.toFixed(1) + '%')}${metricTile('SMA5', formatPrice(t.sma5, stock))}</div>
+        <div class="signals">${renderTechnicalSignals(t)}</div>`;
+    }
+
+    function renderTechnicalSignals(t) {
+      const signals = [];
+      if (t.sma25 != null) signals.push([t.price >= t.sma25 ? 'good' : 'warn', t.price >= t.sma25 ? '現在値は25日線を上回っています。短期トレンドは底堅い状態です。' : '現在値は25日線を下回っています。戻り売りや下落継続に注意です。']);
+      if (t.sma25 != null && t.sma75 != null) signals.push([t.sma25 >= t.sma75 ? 'good' : 'warn', t.sma25 >= t.sma75 ? '25日線が75日線を上回っています。中期トレンドは上向きです。' : '25日線が75日線を下回っています。中期トレンドは弱めです。']);
+      if (t.rsi != null) {
+        const cls = t.rsi <= 30 ? 'good' : t.rsi >= 70 ? 'bad' : '';
+        const text = t.rsi <= 30 ? `RSI ${t.rsi.toFixed(1)}: 売られすぎ圏です。反発候補として監視できます。` : t.rsi >= 70 ? `RSI ${t.rsi.toFixed(1)}: 買われすぎ圏です。短期過熱に注意です。` : `RSI ${t.rsi.toFixed(1)}: 過熱感は限定的です。`;
+        signals.push([cls, text]);
+      }
+      if (t.macd.histogram != null) signals.push([t.macd.histogram >= 0 ? 'good' : 'warn', t.macd.histogram >= 0 ? 'MACDヒストグラムはプラスです。モメンタム改善を示唆します。' : 'MACDヒストグラムはマイナスです。モメンタム低下を示唆します。']);
+      return signals.map(([cls, text]) => `<div class="signal ${cls}">${escapeHtml(text)}</div>`).join('');
+    }
+
+    function renderAlertLog() {
+      const container = $('alertLogContainer');
+      if (!alertLog.length) {
+        container.innerHTML = `<div class="empty"><strong>通知履歴はありません</strong>新着IRがあるとここに表示されます。</div>`;
+        return;
+      }
+      container.innerHTML = `<div class="log-list">${alertLog.slice(0, 200).map((log) => `<div class="log-item"><div class="subtle">${formatDateTime(log.time)}</div><div><span class="ticker">${escapeHtml(log.code || '')}</span><span class="name" style="display:inline;margin-left:8px;">${escapeHtml(log.name || '')}</span><div style="margin-top:8px;">${escapeHtml(log.message || '')}</div></div><span class="chip ${log.level === 'bad' ? 'hit' : log.level === 'info' ? 'info' : 'warn'}">${escapeHtml(log.type || 'alert')}</span></div>`).join('')}</div>`;
+    }
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach((button) => button.classList.toggle('active', button.dataset.tab === name));
+      document.querySelectorAll('.panel').forEach((panel) => panel.classList.toggle('active', panel.id === `panel-${name}`));
+      renderAll();
+    }
+
+    function focusAnalysis(id) {
+      switchTab('analysis');
+      $('analysisStockSelect').value = String(id);
+      renderAnalysis();
+    }
+
+    function focusIr(id) {
+      switchTab('ir');
+      $('irStockFilter').value = String(id);
+      renderIr();
+    }
+
+    function toggleAutoIr(id, checked) {
+      const stock = stocks.find((s) => String(s.id) === String(id));
+      if (!stock) return;
+      stock.autoIr = checked;
+      saveState();
+      renderAll();
+      showToast(`${stock.code} のIR自動取得を${checked ? 'ON' : 'OFF'}にしました`, 'success');
+    }
+
+    function removeStock(id) {
+      const stock = stocks.find((s) => String(s.id) === String(id));
+      if (!stock) return;
+      if (!confirm(`${stock.code} を削除しますか？`)) return;
+      stocks = stocks.filter((s) => String(s.id) !== String(id));
+      saveState();
+      renderAll();
+      showToast(`${stock.code} を削除しました`, 'success');
+    }
+
+    async function refreshSelectedIr() {
+      const stock = stocks.find((s) => String(s.id) === String($('irStockFilter').value));
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      try {
+        setLastRun(`${stock.code} IR取得中`);
+        await fetchIr(stock);
+        saveState();
+        renderAll();
+        showToast(`${stock.code} のIRを更新しました`, 'success');
+      } catch (error) {
+        stock.irError = error.message;
+        saveState();
+        renderAll();
+        showToast(`IR取得に失敗: ${error.message}`, 'error');
+      }
+    }
+
+    async function refreshSelectedAnalysis() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      await refreshOne(stock.id);
+    }
+
+    function openLatestIr() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      const latestIr = stock?.irItems?.[0];
+      if (!latestIr?.url) return showToast('開けるIR PDFがありません', 'warn');
+      window.open(latestIr.url, '_blank', 'noopener,noreferrer');
+    }
+
+    async function copyLatestEarningsIrPrompt() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      if (stock.market !== 'JP') return showToast('決算IRプロンプトは日本株のみ対応です', 'warn');
+      if (!(stock.irItems || []).length) {
+        try {
+          setLastRun(`${stock.code} IR取得中`);
+          await fetchIr(stock, { silent: true });
+        } catch (error) {
+          stock.irError = error.message;
+        }
+      }
+      const item = findLatestEarningsIr(stock);
+      if (!item?.url) {
+        stock.irPromptError = 'プロンプトに使える決算短信PDFが見つかりません。IR更新を実行してください。';
+        saveState();
+        renderAll();
+        return showToast(stock.irPromptError, 'warn');
+      }
+
+      const btn = $('copyIrPromptBtn');
+      const oldText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'コピー中...';
+
+      try {
+        const text = buildEarningsIrPrompt(stock, item);
+        stock.irPrompt = {
+          item: {
+            date: item.date || '',
+            time: item.time || '',
+            title: item.title || '',
+            url: item.url || ''
+          },
+          text,
+          generatedAt: new Date().toISOString()
+        };
+        stock.irPromptError = null;
+        await copyText(text);
+        showToast(`${stock.code} の決算IRプロンプトをコピーしました`, 'success');
+      } catch (error) {
+        stock.irPromptError = error.message;
+        showToast(`決算IRプロンプト作成に失敗しました: ${error.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = oldText;
+        saveState();
+        renderAll();
+      }
+    }
+
+    async function runSelectedAiAnalysis() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      if (!stock.price && !(stock.chartPoints || []).length) {
+        return showToast('先に価格/分析更新を行ってください', 'warn');
+      }
+
+      const btn = $('runAiAnalysisBtn');
+      const oldText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '分析中...';
+      stock.aiLoading = true;
+      stock.aiError = null;
+      renderAnalysis();
+
+      try {
+        stock.aiAnalysis = buildLocalAnalysis(stock);
+        stock.aiError = null;
+        showToast(`${stock.code} の分析レポートを更新しました`, 'success');
+      } catch (error) {
+        stock.aiError = error.message;
+        showToast(`分析レポートの生成に失敗しました: ${error.message}`, 'error');
+      } finally {
+        stock.aiLoading = false;
+        btn.disabled = false;
+        btn.textContent = oldText;
+        saveState();
+        renderAll();
+      }
+    }
+
+    async function copyAiMemo() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      if (!stock.aiAnalysis) {
+        stock.aiAnalysis = buildLocalAnalysis(stock);
+        saveState();
+        renderAll();
+      }
+      const memo = buildChatGptMemoText(stock);
+      try {
+        await copyText(memo);
+        showToast(`${stock.code} のChatGPT用レポートをコピーしました`, 'success');
+      } catch (error) {
+        showToast(`クリップボードへのコピーに失敗しました: ${error.message}`, 'error');
+      }
+    }
+
+    function clearSelectedAiAnalysis() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      stock.aiAnalysis = null;
+      stock.aiError = null;
+      saveState();
+      renderAll();
+      showToast(`${stock.code} の分析レポートを削除しました`, 'success');
+    }
+
+    function exportData() {
+      const payload = { version: 1, exportedAt: new Date().toISOString(), stocks, alertLog };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kabu-lab-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const payload = JSON.parse(reader.result);
+          if (!Array.isArray(payload.stocks)) throw new Error('stocks配列がありません');
+          stocks = payload.stocks.map(normalizeStock);
+          alertLog = Array.isArray(payload.alertLog) ? payload.alertLog : alertLog;
+          saveState();
+          renderAll();
+          showToast('JSONを読み込みました', 'success');
+        } catch (error) {
+          showToast(`読込失敗: ${error.message}`, 'error');
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function renderAnalysis() {
+      const container = $('analysisContainer');
+      const stockId = $('analysisStockSelect')?.value;
+      const stock = stocks.find((s) => String(s.id) === String(stockId)) || stocks[0];
+      if (!stock) {
+        container.innerHTML = `<div class="empty"><strong>分析対象がありません</strong>銘柄を追加してから分析してください。</div>`;
+        return;
+      }
+      const technical = stock.technical || buildTechnical(stock);
+      stock.technical = technical;
+      const f = stock.fundamentals || {};
+      const latestIr = (stock.irItems || [])[0];
+      const fundamentalsHtml = `<div class="card"><div class="card-title"><span>${escapeHtml(stock.code)} 基本分析</span><span class="subtle">${formatDateTime(stock.quoteFetchedAt || stock.chartFetchedAt)}</span></div>
+          <div class="analysis-grid">${metricTile('PER', f.per == null ? '未取得' : Number(f.per).toFixed(2) + 'x')}${metricTile('PBR', f.pbr == null ? '未取得' : Number(f.pbr).toFixed(2) + 'x')}${metricTile('EPS', f.eps == null ? '未取得' : Number(f.eps).toFixed(2))}${metricTile('時価総額', formatCompact(f.marketCap))}</div>
+          <div class="signals">${renderFundamentalSignals(stock)}${latestIr ? renderIrSignal('最新IR', latestIr) : '<div class="signal warn">直近IRはまだ取得できていません。</div>'}</div>
+        </div>`;
+      const technicalHtml = `<div class="card"><div class="card-title"><span>テクニカル分析</span><span class="subtle">${technical ? technical.trend + ' / Score ' + technical.score : '未取得'}</span></div>${technical ? renderTechnicalBlock(stock, technical) : `<div class="empty"><strong>チャートデータ不足</strong>「分析更新」を実行して価格データを揃えてください。</div>`}</div>`;
+      container.innerHTML = `<div class="grid-2">${fundamentalsHtml}${technicalHtml}</div>${renderIrPromptCard(stock)}${renderAiAnalysisCard(stock)}`;
+    }
+
+    function bindEvents() {
+      document.querySelectorAll('.tab').forEach((button) => button.addEventListener('click', () => switchTab(button.dataset.tab)));
+      $('proxyCheckBtn').addEventListener('click', checkProxy);
+      $('proxyInput').addEventListener('change', () => setProxyBase($('proxyInput').value));
+      $('addStockBtn').addEventListener('click', addStockFromForm);
+      $('codeInput').addEventListener('keydown', (event) => { if (event.key === 'Enter') addStockFromForm(); });
+      $('refreshAllBtn').addEventListener('click', () => refreshAll());
+      $('refreshIrBtn').addEventListener('click', () => refreshAllIr());
+      $('diagnosticsBtn').addEventListener('click', runDiagnostics);
+      $('refreshSelectedIrBtn').addEventListener('click', refreshSelectedIr);
+      $('clearIrBtn').addEventListener('click', renderIr);
+      $('irStockFilter').addEventListener('change', renderIr);
+      $('irCategoryFilter').addEventListener('change', renderIr);
+      $('analysisStockSelect').addEventListener('change', renderAnalysis);
+      $('refreshSelectedAnalysisBtn').addEventListener('click', refreshSelectedAnalysis);
+      $('openLatestIrBtn').addEventListener('click', openLatestIr);
+      $('copyIrPromptBtn').addEventListener('click', copyLatestEarningsIrPrompt);
+      $('runAiAnalysisBtn').addEventListener('click', runSelectedAiAnalysis);
+      $('copyAiMemoBtn').addEventListener('click', copyAiMemo);
+      $('clearAiAnalysisBtn').addEventListener('click', clearSelectedAiAnalysis);
+      $('clearLogBtn').addEventListener('click', () => {
+        if (!confirm('通知履歴を削除しますか？')) return;
+        alertLog = [];
+        saveState();
+        renderAll();
+      });
+      $('exportBtn').addEventListener('click', exportData);
+      $('importBtn').addEventListener('click', () => $('importFile').click());
+      $('importFile').addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        if (file) importData(file);
+        event.target.value = '';
+      });
+    }
+
+    function init() {
+      setProxyBase(localStorage.getItem(STORAGE_PROXY) || $('proxyInput').value);
+      stocks = stocks.map(normalizeStock).filter((s) => s.code);
+      saveState();
+      bindEvents();
+      renderAll();
+      checkProxy();
+      if (stocks.length) {
+        window.setTimeout(() => refreshAll({ silent: true }), 800);
+        window.setTimeout(() => refreshAllIr({ silent: true }), 2500);
+      }
+      window.setInterval(() => {
+        if (document.visibilityState === 'visible' && stocks.length) refreshAll({ silent: true });
+      }, 15 * 60 * 1000);
+      window.setInterval(() => {
+        if (document.visibilityState === 'visible' && stocks.some((s) => s.autoIr)) refreshAllIr({ silent: true });
+      }, 60 * 60 * 1000);
+    }
+
+    window.refreshOne = refreshOne;
+    window.focusAnalysis = focusAnalysis;
+    window.focusIr = focusIr;
+    window.toggleAutoIr = toggleAutoIr;
+    window.removeStock = removeStock;
+    init();
+  </script>
+</body>
+</html>

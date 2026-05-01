@@ -1,0 +1,3331 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>株価アラート / Stock Alert</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: #1e2d45;
+      --accent: #00d4ff;
+      --accent2: #ff6b35;
+      --green: #00e676;
+      --red: #ff4444;
+      --yellow: #ffd600;
+      --text: #e8edf5;
+      --text-muted: #6b7fa3;
+      --text-dim: #3d4f6e;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans JP', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 28px 40px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(10, 14, 26, 0.8);
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .logo-main {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+
+    .logo-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'Space Mono', monospace;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.4);
+      }
+
+      50% {
+        opacity: 0.7;
+        box-shadow: 0 0 0 6px rgba(0, 230, 118, 0);
+      }
+    }
+
+    .main {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 40px;
+    }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+    }
+
+    .tab:hover {
+      color: var(--text);
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover {
+      border-color: #2a3d5e;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* FORM */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    input,
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Noto Sans JP', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.08);
+    }
+
+    select option {
+      background: var(--surface2);
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .checkbox-label:hover {
+      border-color: var(--accent);
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      display: none;
+    }
+
+    .checkbox-label.checked {
+      background: rgba(0, 212, 255, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn {
+      padding: 11px 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Noto Sans JP', sans-serif;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0a0e1a;
+    }
+
+    .btn-primary:hover {
+      background: #33ddff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-muted);
+      color: var(--text);
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border: 1px solid transparent;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .btn-danger:hover {
+      border-color: var(--red);
+      background: rgba(255, 68, 68, 0.08);
+    }
+
+    /* CSV UPLOAD */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--surface2);
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(0, 212, 255, 0.04);
+    }
+
+    .upload-icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    .upload-text {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .upload-text span {
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* WATCHLIST TABLE */
+    .watchlist {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .watchlist th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+
+    .watchlist td {
+      padding: 14px;
+      border-bottom: 1px solid rgba(30, 45, 69, 0.5);
+      vertical-align: middle;
+    }
+
+    .watchlist tr:last-child td {
+      border-bottom: none;
+    }
+
+    .watchlist tr:hover td {
+      background: rgba(0, 212, 255, 0.02);
+    }
+
+    .ticker-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(0, 212, 255, 0.08);
+      padding: 3px 10px;
+      border-radius: 4px;
+    }
+
+    .ticker-link {
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .external-links {
+      display: inline-flex;
+      gap: 6px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .external-link {
+      color: var(--text-muted);
+      border: 1px solid rgba(107, 127, 163, 0.25);
+      background: rgba(107, 127, 163, 0.08);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .external-link:hover {
+      color: var(--accent);
+      border-color: rgba(0, 212, 255, 0.35);
+      background: rgba(0, 212, 255, 0.08);
+    }
+
+    .stock-name {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .price-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .change-positive {
+      color: var(--green);
+    }
+
+    .change-negative {
+      color: var(--red);
+    }
+
+    .change-neutral {
+      color: var(--text-muted);
+    }
+
+    .alert-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin: 2px;
+    }
+
+    .alert-triggered {
+      background: rgba(255, 68, 68, 0.15);
+      color: var(--red);
+      border: 1px solid rgba(255, 68, 68, 0.3);
+    }
+
+    .alert-active {
+      background: rgba(0, 212, 255, 0.08);
+      color: var(--accent);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+    }
+
+    .alert-inactive {
+      background: rgba(107, 127, 163, 0.1);
+      color: var(--text-dim);
+      border: 1px solid transparent;
+    }
+
+    .status-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      min-width: 120px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .status-ok {
+      color: var(--green);
+      background: rgba(0, 230, 118, 0.1);
+      border-color: rgba(0, 230, 118, 0.25);
+    }
+
+    .status-warn {
+      color: var(--yellow);
+      background: rgba(255, 214, 0, 0.1);
+      border-color: rgba(255, 214, 0, 0.25);
+    }
+
+    .status-error {
+      color: var(--red);
+      background: rgba(255, 68, 68, 0.12);
+      border-color: rgba(255, 68, 68, 0.28);
+    }
+
+    .status-muted {
+      color: var(--text-muted);
+      background: rgba(107, 127, 163, 0.1);
+      border-color: rgba(107, 127, 163, 0.18);
+    }
+
+    .preset-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .preset-btn {
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+
+    .preset-btn.active {
+      color: var(--accent);
+      border-color: rgba(0, 212, 255, 0.45);
+      background: rgba(0, 212, 255, 0.1);
+    }
+
+    .preset-btn.inactive {
+      opacity: 0.7;
+    }
+
+    .group-select {
+      margin-top: 8px;
+      padding: 5px 8px;
+      font-size: 12px;
+      min-width: 110px;
+    }
+
+    .note-preview {
+      margin-top: 6px;
+      color: var(--yellow);
+      font-size: 12px;
+      line-height: 1.4;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .utility-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .utility-row input,
+    .utility-row select {
+      min-width: 140px;
+    }
+
+    .log-time {
+      color: var(--text-muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .mini-line {
+      margin-top: 5px;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    /* ALERT PANEL */
+    .alert-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .alert-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: all 0.2s;
+    }
+
+    .alert-item.triggered {
+      border-color: rgba(255, 68, 68, 0.4);
+      background: rgba(255, 68, 68, 0.04);
+      animation: alertGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes alertGlow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+      }
+
+      50% {
+        box-shadow: 0 0 20px rgba(255, 68, 68, 0.15);
+      }
+    }
+
+    .alert-info {
+      flex: 1;
+    }
+
+    .alert-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .alert-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .alert-status {
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .status-triggered {
+      background: rgba(255, 68, 68, 0.15);
+      color: var(--red);
+    }
+
+    .status-watching {
+      background: rgba(0, 212, 255, 0.08);
+      color: var(--accent);
+    }
+
+    /* SUMMARY STATS */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .stat-value.accent {
+      color: var(--accent);
+    }
+
+    .stat-value.red {
+      color: var(--red);
+    }
+
+    .stat-value.green {
+      color: var(--green);
+    }
+
+    .stat-value.yellow {
+      color: var(--yellow);
+    }
+
+    .fetch-dashboard {
+      margin-bottom: 24px;
+    }
+
+    .fetch-dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .fetch-metric {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .fetch-metric-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .fetch-metric-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .fetch-error-summary {
+      margin-top: 12px;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    /* EMPTY STATE */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .empty-text {
+      font-size: 15px;
+    }
+
+    .empty-sub {
+      font-size: 13px;
+      margin-top: 6px;
+      opacity: 0.7;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 14px;
+      z-index: 1000;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      max-width: 320px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      border-color: var(--green);
+    }
+
+    .toast.error {
+      border-color: var(--red);
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    /* LOADING */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .fetching {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .tag-jp {
+      background: rgba(255, 107, 53, 0.15);
+      color: var(--accent2);
+      border: 1px solid rgba(255, 107, 53, 0.3);
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+    }
+
+    .tag-us {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.open {
+      display: flex;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      width: 480px;
+      max-width: 95vw;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    .modal-stock-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .modal-price {
+      font-family: 'Space Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-left: auto;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .condition-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(30, 45, 69, 0.5);
+    }
+
+    .condition-row:last-child {
+      border-bottom: none;
+    }
+
+    .condition-toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .condition-toggle input {
+      display: none;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 14px;
+      height: 14px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .condition-toggle input:checked+.toggle-track {
+      background: rgba(0, 212, 255, 0.3);
+    }
+
+    .condition-toggle input:checked+.toggle-track::after {
+      left: 19px;
+      background: var(--accent);
+    }
+
+    .condition-label {
+      font-size: 13px;
+      font-weight: 500;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .condition-input {
+      width: 110px;
+      padding: 7px 10px;
+      font-size: 13px;
+    }
+
+    .per-pbr-cell {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+    }
+
+    .per-pbr-cell .label {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+
+    .chart-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .chart-controls select {
+      min-width: 200px;
+    }
+
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 400px;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+
+    .chart-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .chart-legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    .history-table th {
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+
+    .history-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(30, 45, 69, 0.5);
+      font-family: 'Space Mono', monospace;
+    }
+
+    .btn-chart {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid transparent;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .btn-chart:hover {
+      border-color: var(--accent);
+      background: rgba(0, 212, 255, 0.08);
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        padding: 16px 20px;
+      }
+
+      .main {
+        padding: 20px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">
+      <span class="logo-main">KABU_ALERT</span>
+      <span class="logo-sub">株価アラートシステム</span>
+    </div>
+    <div class="status-bar">
+      <div class="pulse"></div>
+      <span id="lastUpdate">準備完了</span>
+    </div>
+  </header>
+
+  <div class="main">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">ウォッチ銘柄数</div>
+        <div class="stat-value accent" id="statTotal">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">アラート発動中</div>
+        <div class="stat-value red" id="statTriggered">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">監視中アラート</div>
+        <div class="stat-value yellow" id="statWatching">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">割安候補</div>
+        <div class="stat-value green" id="statBargain">0</div>
+      </div>
+    </div>
+
+    <div class="card fetch-dashboard">
+      <div class="section-header" style="margin-bottom:12px;">
+        <span class="section-title">取得状態ダッシュボード</span>
+        <span style="font-size:12px;color:var(--text-muted);" id="fetchProxyBase">proxy: --</span>
+      </div>
+      <div class="fetch-dashboard-grid">
+        <div class="fetch-metric">
+          <div class="fetch-metric-label">成功</div>
+          <div class="fetch-metric-value" style="color:var(--green);" id="fetchOkCount">0</div>
+        </div>
+        <div class="fetch-metric">
+          <div class="fetch-metric-label">失敗</div>
+          <div class="fetch-metric-value" style="color:var(--red);" id="fetchFailCount">0</div>
+        </div>
+        <div class="fetch-metric">
+          <div class="fetch-metric-label">未取得</div>
+          <div class="fetch-metric-value" style="color:var(--yellow);" id="fetchPendingCount">0</div>
+        </div>
+        <div class="fetch-metric">
+          <div class="fetch-metric-label">最終成功</div>
+          <div class="fetch-metric-value" style="color:var(--accent);" id="fetchLastSuccess">--</div>
+        </div>
+      </div>
+      <div class="fetch-error-summary" id="fetchTopError">主な失敗理由: --</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('watchlist')">ウォッチリスト</div>
+      <div class="tab" onclick="switchTab('ranking')">高値下落ランキング</div>
+      <div class="tab" onclick="switchTab('buyranking')">買い候補ランキング</div>
+      <div class="tab" onclick="switchTab('alerts')">アラート設定</div>
+      <div class="tab" onclick="switchTab('log')">通知履歴</div>
+      <div class="tab" onclick="switchTab('rsi')">📉 RSI(14)</div>
+      <div class="tab" onclick="switchTab('import')">銘柄追加 / CSV読込</div>
+    </div>
+
+    <!-- TAB: WATCHLIST -->
+    <div class="tab-content active" id="tab-watchlist">
+      <div class="card">
+                <div class="section-header">
+          <span class="section-title">登録銘柄一覧</span>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <label style="font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;">グループ</label>
+            <select id="watchlistGroupFilter" onchange="renderWatchlist()">
+              <option value="all">すべて</option>
+              <option value="holding">保有中</option>
+              <option value="watch">監視中</option>
+              <option value="buy">買い候補</option>
+              <option value="exclude">除外候補</option>
+            </select>
+            <label style="font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;">ソート</label>
+            <select id="watchlistSort" onchange="renderWatchlist()">
+              <option value="name:asc">銘柄名 / ティッカー</option>
+              <option value="price:desc">現在価格 高い順</option>
+              <option value="price:asc">現在価格 低い順</option>
+              <option value="change:desc">前回比 大きい順</option>
+              <option value="change:asc">前回比 小さい順</option>
+              <option value="yearHigh:desc">1年高値比 大きい順</option>
+              <option value="yearHigh:asc">1年高値比 小さい順</option>
+              <option value="rsi:asc">RSI(14) 低い順</option>
+              <option value="rsi:desc">RSI(14) 高い順</option>
+              <option value="updated:desc">更新 新しい順</option>
+              <option value="updated:asc">更新 古い順</option>
+            </select>
+            <button class="btn btn-secondary" onclick="testLocalProxy()">プロキシ確認</button>
+            <button class="btn btn-secondary" onclick="refreshAllPrices()" id="refreshBtn">
+              <span id="refreshLabel">価格を更新</span>
+            </button>
+            <button class="btn btn-secondary" onclick="refreshAllChartData()" id="chartRefreshBtn">
+              <span id="chartRefreshLabel">1年高値/RSI更新</span>
+            </button>
+          </div>
+        </div>
+        <div id="watchlistContainer">
+          <div class="empty">
+            <div class="empty-icon">📋</div>
+            <div class="empty-text">銘柄が登録されていません</div>
+            <div class="empty-sub">「銘柄追加」タブから追加してください</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: RANKING -->
+    <div class="tab-content" id="tab-ranking">
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">1年高値からの下落ランキング</span>
+          <span style="font-size:12px;color:var(--text-muted);">下落率が大きい順に表示します</span>
+        </div>
+        <div id="rankingContainer"></div>
+      </div>
+    </div>
+
+    <!-- TAB: BUY RANKING -->
+    <div class="tab-content" id="tab-buyranking">
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">買い候補ランキング</span>
+          <span style="font-size:12px;color:var(--text-muted);">「買い候補」グループを、買いたい価格・下落率・RSIで並べます</span>
+        </div>
+        <div id="buyRankingContainer"></div>
+      </div>
+    </div>
+
+    <!-- TAB: ALERTS -->
+    <div class="tab-content" id="tab-alerts">
+      <div class="card">
+        <div class="card-title">監視条件プリセット</div>
+        <div id="presetControls" class="preset-grid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">発動中のアラート</div>
+        <div id="alertTriggeredList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">監視中のアラート</div>
+        <div id="alertWatchingList"></div>
+      </div>
+    </div>
+    <!-- TAB: LOG -->
+    <div class="tab-content" id="tab-log">
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">通知履歴ログ</span>
+          <button class="btn btn-secondary" onclick="clearAlertLog()">履歴を消去</button>
+        </div>
+        <div class="utility-row" style="margin-bottom:14px;">
+          <input type="text" id="logFilterTicker" placeholder="銘柄で絞り込み" oninput="renderAlertLog()">
+          <select id="logFilterType" onchange="renderAlertLog()">
+            <option value="all">条件: すべて</option>
+            <option value="buyPrice">買いたい価格</option>
+            <option value="yearHighDrop">1年高値比</option>
+            <option value="rsi">RSI</option>
+            <option value="price">指定価格</option>
+            <option value="drop">前日比下落</option>
+            <option value="per">PER</option>
+            <option value="pbr">PBR</option>
+          </select>
+          <select id="logFilterGroup" onchange="renderAlertLog()">
+            <option value="all">グループ: すべて</option>
+            <option value="holding">保有中</option>
+            <option value="watch">監視中</option>
+            <option value="buy">買い候補</option>
+            <option value="exclude">除外候補</option>
+          </select>
+          <select id="logFilterDays" onchange="renderAlertLog()">
+            <option value="all">期間: すべて</option>
+            <option value="1">24時間</option>
+            <option value="7">7日</option>
+            <option value="30">30日</option>
+          </select>
+        </div>
+        <div id="alertLogContainer"></div>
+      </div>
+    </div>
+    <!-- TAB: RSI -->
+    <div class="tab-content" id="tab-rsi">
+      <div class="card">
+        <div class="card-title">RSI(14) 推移グラフ</div>
+        <div class="chart-controls">
+          <div class="field">
+            <label>銘柄を選択</label>
+            <select id="rsiStockSelect" onchange="renderRSI()"></select>
+          </div>
+          <div class="field">
+            <label>表示期間</label>
+            <select id="rsiPeriod" onchange="renderRSI()">
+              <option value="30">30日</option>
+              <option value="60">60日</option>
+              <option value="90" selected>90日</option>
+              <option value="180">180日</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="rsiChart"></canvas>
+        </div>
+        <div id="rsiNoData" class="no-data" style="display:none;">データがありません。価格を更新するとRSIが計算されます。</div>
+      </div>
+    </div>
+
+    <!-- TAB: IMPORT -->
+    <div class="tab-content" id="tab-import">
+
+      <!-- Manual Add -->
+      <div class="card">
+        <div class="card-title">銘柄を手動追加</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>ティッカー / 銘柄コード</label>
+            <input type="text" id="inputTicker" placeholder="例: 7203 / AAPL" />
+          </div>
+          <div class="field">
+            <label>銘柄名（任意）</label>
+            <input type="text" id="inputName" placeholder="例: トヨタ / Apple" />
+          </div>
+          <div class="field">
+            <label>市場</label>
+            <select id="inputMarket">
+              <option value="JP">🇯🇵 日本株 (Tokyo)</option>
+              <option value="US">🇺🇸 米国株 (NYSE/NASDAQ)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="card-title">アラート条件設定</div>
+
+        <div class="field" style="margin-bottom: 14px;">
+          <label>アラート種別</label>
+          <div class="checkbox-group" id="alertTypeGroup">
+            <label class="checkbox-label" onclick="toggleCheck(this)">
+              <input type="checkbox" value="price">💰 指定価格以下
+            </label>
+            <label class="checkbox-label" onclick="toggleCheck(this)">
+              <input type="checkbox" value="drop">📉 大幅下落（%）
+            </label>
+            <label class="checkbox-label" onclick="toggleCheck(this)">
+              <input type="checkbox" value="per">📊 PER 割安
+            </label>
+            <label class="checkbox-label" onclick="toggleCheck(this)">
+              <input type="checkbox" value="pbr">📊 PBR 割安
+            </label>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">プリセット監視: 1年高値比 -15/-20/-25/-30%、RSI 20/30以下は「アラート設定」でON/OFFできます</div>
+        </div>
+
+        <div class="form-grid" id="alertConditionsArea">
+          <div class="field" id="condPrice" style="display:none;">
+            <label>目標価格（円 / ドル）</label>
+            <input type="number" id="inputTargetPrice" placeholder="例: 2500" />
+          </div>
+          <div class="field" id="condDrop" style="display:none;">
+            <label>下落率（%）以上で発動</label>
+            <input type="number" id="inputDropPct" placeholder="例: 5" min="1" max="50" />
+          </div>
+          <div class="field" id="condPer" style="display:none;">
+            <label>PER 閾値以下で発動</label>
+            <input type="number" id="inputPerThreshold" placeholder="例: 15" />
+          </div>
+          <div class="field" id="condPbr" style="display:none;">
+            <label>PBR 閾値以下で発動</label>
+            <input type="number" id="inputPbrThreshold" placeholder="例: 1.0" step="0.1" />
+          </div>
+        </div>
+
+        <div style="margin-top: 18px;">
+          <button class="btn btn-primary" onclick="addStock()">銘柄を追加</button>
+        </div>
+      </div>
+
+      <!-- CSV Import -->
+      <div class="card">
+        <div class="card-title">楽天証券 CSV読込</div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFile').click()"
+          ondrop="handleDrop(event)" ondragover="event.preventDefault(); this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')">
+          <input type="file" id="csvFile" accept=".csv" onchange="handleCSV(event)">
+          <div class="upload-icon">📂</div>
+          <div class="upload-text">
+            クリックまたはCSVをドラッグ＆ドロップ<br>
+            <span>楽天証券のウォッチリストCSV</span> に対応<br>
+            <small style="color: var(--text-dim);">銘柄コード・銘柄名の列を自動認識します</small>
+          </div>
+        </div>
+        <div id="csvPreview" style="margin-top: 14px;"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ALERT MODAL -->
+  <div class="modal-overlay" id="alertModal" onclick="closeModal(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">アラート設定</span>
+        <button class="modal-close" onclick="closeAlertModal()">✕</button>
+      </div>
+      <div class="modal-stock-info">
+        <span class="ticker-badge" id="modalTicker">—</span>
+        <span id="modalName" style="font-size:13px;color:var(--text-muted);"></span>
+        <span class="modal-price" id="modalPrice">—</span>
+      </div>
+
+      <div>
+        <!-- 指定価格以下 -->
+        <div class="condition-row">
+          <label class="condition-toggle">
+            <input type="checkbox" id="chkPrice" onchange="toggleCondInput('price')">
+            <span class="toggle-track"></span>
+          </label>
+          <span class="condition-label">💰 指定価格以下</span>
+          <input class="condition-input input" type="number" id="valPrice" placeholder="例: 2500" disabled>
+        </div>
+        <!-- 大幅下落 -->
+        <div class="condition-row">
+          <label class="condition-toggle">
+            <input type="checkbox" id="chkDrop" onchange="toggleCondInput('drop')">
+            <span class="toggle-track"></span>
+          </label>
+          <span class="condition-label">📉 大幅下落（%以上）</span>
+          <input class="condition-input input" type="number" id="valDrop" placeholder="例: 5" min="1" max="50" disabled>
+        </div>
+        <!-- PER -->
+        <div class="condition-row">
+          <label class="condition-toggle">
+            <input type="checkbox" id="chkPer" onchange="toggleCondInput('per')">
+            <span class="toggle-track"></span>
+          </label>
+          <span class="condition-label">📊 PER 閾値以下</span>
+          <input class="condition-input input" type="number" id="valPer" placeholder="例: 15" disabled>
+        </div>
+        <!-- PBR -->
+        <div class="condition-row">
+          <label class="condition-toggle">
+            <input type="checkbox" id="chkPbr" onchange="toggleCondInput('pbr')">
+            <span class="toggle-track"></span>
+          </label>
+          <span class="condition-label">📊 PBR 閾値以下</span>
+          <input class="condition-input input" type="number" id="valPbr" placeholder="例: 1.0" step="0.1" disabled>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAlertModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveAlertFromModal()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // =============================================
+    // STATE
+    // =============================================
+    let stocks = JSON.parse(localStorage.getItem('kabu_stocks') || '[]');
+    let alerts = JSON.parse(localStorage.getItem('kabu_alerts') || '[]');
+    let history = JSON.parse(localStorage.getItem('kabu_history') || '{}');
+    let alertLog = JSON.parse(localStorage.getItem('kabu_alert_log') || '[]');
+    let rsiChart = null;
+    function getLocalProxyBase() {
+      return localStorage.getItem('kabu_local_proxy') || 'http://127.0.0.1:8787';
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+    async function testLocalProxy() {
+      const mkSignal = (ms) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return c.signal; };
+      const ports = [8787, 8788, 8789, 8790];
+      for (const p of ports) {
+        const base = `http://127.0.0.1:${p}`;
+        try {
+          const r = await fetch(`${base}/health`, { signal: mkSignal(1200), cache: 'no-store' });
+          if (!r.ok) throw new Error('status ' + r.status);
+          await r.json().catch(() => null);
+          localStorage.setItem('kabu_local_proxy', base);
+          showToast('ローカルプロキシOK: ' + base, 'success');
+          return true;
+        } catch {
+          // try next
+        }
+      }
+      showToast('ローカルプロキシNG: healthに接続できません', 'error');
+      return false;
+    }
+
+    const YEAR_HIGH_DROP_LEVELS = [15, 20, 25, 30];
+    const YEAR_HIGH_KEY_PREFIX = 'yearHighDrop:';
+    // 通常の価格更新はquote APIで複数銘柄をまとめて取得し、日足取得は別ボタンに分けます。
+    const LOCAL_CHART_TIMEOUT_MS = 25000;
+    const LOCAL_QUOTE_TIMEOUT_MS = 15000;
+    const PUBLIC_FALLBACK_TIMEOUT_MS = 10000;
+    const QUOTE_BATCH_SIZE = 30;
+    const STOCK_GROUPS = [
+      { key: 'watch', label: '監視中' },
+      { key: 'holding', label: '保有中' },
+      { key: 'buy', label: '買い候補' },
+      { key: 'exclude', label: '除外候補' }
+    ];
+    const DEFAULT_ALERT_PRESETS = {
+      yearHigh15: true,
+      yearHigh20: true,
+      yearHigh25: true,
+      yearHigh30: true,
+      rsi20: true,
+      rsi30: false
+    };
+    let alertPresets = {
+      ...DEFAULT_ALERT_PRESETS,
+      ...JSON.parse(localStorage.getItem('kabu_alert_presets') || '{}')
+    };
+    let audioCtx = null;
+
+    function unlockAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playAlertSound() {
+      unlockAudioContext();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.2, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+      gain.connect(audioCtx.destination);
+
+      const osc = audioCtx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, now);
+      osc.connect(gain);
+      osc.start(now);
+      osc.stop(now + 0.4);
+
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      gain2.gain.setValueAtTime(0.0001, now + 0.5);
+      gain2.gain.exponentialRampToValueAtTime(0.18, now + 0.52);
+      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+      gain2.connect(audioCtx.destination);
+      osc2.type = 'square';
+      osc2.frequency.setValueAtTime(740, now + 0.5);
+      osc2.connect(gain2);
+      osc2.start(now + 0.5);
+      osc2.stop(now + 0.8);
+    }
+
+    function getCurrencySymbol(stock) {
+      return stock.market === 'JP' ? 'JPY ' : '$';
+    }
+
+    function formatPrice(value, stock) {
+      if (value == null) return '--';
+      const currency = getCurrencySymbol(stock);
+      const maxFrac = stock.market === 'JP' ? 0 : 2;
+      return currency + value.toLocaleString(undefined, { maximumFractionDigits: maxFrac });
+    }
+
+    function computeYearHighFromChart(chartResult) {
+      const timestamps = chartResult?.timestamp || [];
+      const closes = chartResult?.indicators?.quote?.[0]?.close || [];
+      let max = null;
+      let maxTs = null;
+      for (let i = 0; i < closes.length; i++) {
+        const v = closes[i];
+        if (v != null && (max == null || v > max)) {
+          max = v;
+          maxTs = timestamps[i];
+        }
+      }
+      if (max == null) return null;
+      const dateStr = maxTs ? new Date(maxTs * 1000).toISOString().slice(0, 10) : null;
+      return { value: max, date: dateStr };
+    }
+
+    function computeLatestCloseSnapshot(chartResult) {
+      const closes = chartResult?.indicators?.quote?.[0]?.close || [];
+      let lastClose = null;
+      let prevClose = null;
+      for (let i = closes.length - 1; i >= 0; i--) {
+        const v = closes[i];
+        if (v == null || isNaN(v)) continue;
+        if (lastClose == null) {
+          lastClose = v;
+        } else {
+          prevClose = v;
+          break;
+        }
+      }
+      return { lastClose, prevClose };
+    }
+
+    document.addEventListener('click', unlockAudioContext, { once: true });
+    function saveState() {
+      localStorage.setItem('kabu_stocks', JSON.stringify(stocks));
+      localStorage.setItem('kabu_alerts', JSON.stringify(alerts));
+    }
+
+    function saveHistory() {
+      localStorage.setItem('kabu_history', JSON.stringify(history));
+    }
+
+    function saveAlertPresets() {
+      localStorage.setItem('kabu_alert_presets', JSON.stringify(alertPresets));
+    }
+
+    function saveAlertLog() {
+      localStorage.setItem('kabu_alert_log', JSON.stringify(alertLog));
+    }
+
+    function normalizeStock(stock) {
+      if (!stock.group) stock.group = 'watch';
+      if (stock.note == null) stock.note = '';
+      if (stock.buyPrice == null || stock.buyPrice === '') stock.buyPrice = null;
+      else stock.buyPrice = parseFloat(stock.buyPrice) || null;
+      if (!Array.isArray(stock.triggeredAlerts)) stock.triggeredAlerts = [];
+      return stock;
+    }
+
+    stocks.forEach(normalizeStock);
+
+    function addHistoryEntry(ticker, per, pbr, price, dateOverride) {
+      const today = dateOverride || new Date().toISOString().slice(0, 10);
+      if (!history[ticker]) history[ticker] = [];
+      const existing = history[ticker].find(h => h.date === today);
+      if (existing) {
+        if (per != null) existing.per = per;
+        if (pbr != null) existing.pbr = pbr;
+        if (price != null) existing.price = price;
+      } else {
+        history[ticker].push({ date: today, per, pbr, price });
+      }
+    }
+
+    function finalizeHistory(ticker) {
+      if (!history[ticker]) return;
+      history[ticker].sort((a, b) => a.date.localeCompare(b.date));
+      if (history[ticker].length > 90) {
+        history[ticker] = history[ticker].slice(-90);
+      }
+      saveHistory();
+    }
+
+    // =============================================
+    // TABS
+    // =============================================
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        const names = ['watchlist', 'ranking', 'buyranking', 'alerts', 'log', 'rsi', 'import'];
+        t.classList.toggle('active', names[i] === name);
+      });
+      document.querySelectorAll('.tab-content').forEach(c => {
+        c.classList.toggle('active', c.id === 'tab-' + name);
+      });
+      if (name === 'watchlist') renderWatchlist();
+      if (name === 'ranking') renderRanking();
+      if (name === 'buyranking') renderBuyRanking();
+      if (name === 'alerts') { renderPresetControls(); renderAlerts(); }
+      if (name === 'log') renderAlertLog();
+      if (name === 'rsi') { populateRSISelect(); renderRSI(); }
+    }
+
+    // =============================================
+    // CHECKBOX TOGGLE
+    // =============================================
+    function toggleCheck(label) {
+      label.classList.toggle('checked');
+      label.querySelector('input').checked = label.classList.contains('checked');
+      updateConditionFields();
+    }
+
+        function parseTimeToSeconds(t) {
+      if (!t) return null;
+      const parts = t.split(':').map(n => parseInt(n, 10));
+      if (parts.length < 2 || parts.some(n => isNaN(n))) return null;
+      const h = parts[0] || 0;
+      const m = parts[1] || 0;
+      const s = parts[2] || 0;
+      return h * 3600 + m * 60 + s;
+    }
+
+    function sortStocks(list) {
+      const sel = document.getElementById('watchlistSort');
+      const value = sel ? sel.value : 'name:asc';
+      const [key, dir] = value.split(':');
+      const mult = dir === 'asc' ? 1 : -1;
+
+      const getName = (s) => (s.name && s.name !== s.ticker ? s.name : s.ticker || '').toUpperCase();
+      const getPrice = (s) => (s.currentPrice != null ? s.currentPrice : null);
+      const getChange = (s) => (s.currentPrice != null && s.prevClose ? ((s.currentPrice - s.prevClose) / s.prevClose * 100) : null);
+      const getYearHigh = (s) => (s.currentPrice != null && s.yearHigh ? ((s.currentPrice / s.yearHigh - 1) * 100) : null);
+      const getRSI = (s) => (s.rsi14 != null ? s.rsi14 : null);
+      const getUpdated = (s) => parseTimeToSeconds(s.lastFetched);
+
+      const compare = (a, b, getter) => {
+        const av = getter(a);
+        const bv = getter(b);
+        if (av == null && bv == null) return 0;
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        if (av < bv) return -1;
+        if (av > bv) return 1;
+        return 0;
+      };
+
+      const sorted = [...list];
+      sorted.sort((a, b) => {
+        let c = 0;
+        switch (key) {
+          case 'price': c = compare(a, b, getPrice); break;
+          case 'change': c = compare(a, b, getChange); break;
+          case 'yearHigh': c = compare(a, b, getYearHigh); break;
+          case 'rsi': c = compare(a, b, getRSI); break;
+          case 'updated': c = compare(a, b, getUpdated); break;
+          case 'name':
+          default: {
+            const an = getName(a);
+            const bn = getName(b);
+            c = an < bn ? -1 : an > bn ? 1 : 0;
+            break;
+          }
+        }
+        return c * mult;
+      });
+
+      return sorted;
+    }
+
+    function getSelectedAlertTypes() {
+      return [...document.querySelectorAll('#alertTypeGroup input:checked')].map(i => i.value);
+    }
+
+    function getGroupLabel(group) {
+      return (STOCK_GROUPS.find(g => g.key === group) || STOCK_GROUPS[0]).label;
+    }
+
+    function renderGroupOptions(selected) {
+      return STOCK_GROUPS.map(g =>
+        `<option value="${g.key}" ${g.key === selected ? 'selected' : ''}>${g.label}</option>`
+      ).join('');
+    }
+
+    function getPresetDefinitions() {
+      return [
+        { key: 'yearHigh15', label: '1年高値比 -15%' },
+        { key: 'yearHigh20', label: '1年高値比 -20%' },
+        { key: 'yearHigh25', label: '1年高値比 -25%' },
+        { key: 'yearHigh30', label: '1年高値比 -30%' },
+        { key: 'rsi20', label: 'RSI 20以下' },
+        { key: 'rsi30', label: 'RSI 30以下' }
+      ];
+    }
+
+    function renderPresetControls() {
+      const el = document.getElementById('presetControls');
+      if (!el) return;
+      el.innerHTML = getPresetDefinitions().map(p => {
+        const active = !!alertPresets[p.key];
+        return `<button class="preset-btn ${active ? 'active' : 'inactive'}" onclick="togglePreset('${p.key}')">${active ? 'ON' : 'OFF'} ${p.label}</button>`;
+      }).join('');
+    }
+
+    function togglePreset(key) {
+      alertPresets[key] = !alertPresets[key];
+      saveAlertPresets();
+      recheckAllAlerts();
+      renderPresetControls();
+      showToast(`${getPresetDefinitions().find(p => p.key === key)?.label || key}: ${alertPresets[key] ? 'ON' : 'OFF'}`, 'success');
+    }
+
+    function recheckAllAlerts() {
+      stocks.forEach(stock => {
+        if (stock.currentPrice != null) checkAlerts(stock);
+      });
+      saveState();
+      renderWatchlist();
+      renderAlerts();
+      renderRanking();
+      renderBuyRanking();
+      renderAlertLog();
+      updateStats();
+    }
+
+    function needsFundamentalFetch(stock) {
+      return stock.alertConditions?.per != null || stock.alertConditions?.pbr != null;
+    }
+
+    function getAlertDistance(stock) {
+      const p = stock.currentPrice;
+      if (p == null || p <= 0) return { label: '価格待ち', cls: 'status-muted', sort: Infinity };
+
+      const candidates = [];
+      const addPriceTarget = (label, threshold) => {
+        if (threshold == null || isNaN(threshold) || threshold <= 0) return;
+        if (p <= threshold) {
+          candidates.push({ label: `到達済み: ${label}`, cls: 'status-error', sort: -1 });
+        } else {
+          const pct = ((p - threshold) / p) * 100;
+          candidates.push({ label: `${label}まで -${pct.toFixed(1)}%`, cls: pct <= 3 ? 'status-warn' : 'status-muted', sort: pct });
+        }
+      };
+
+      const c = stock.alertConditions || {};
+      addPriceTarget('買いたい価格', stock.buyPrice);
+      addPriceTarget('指定価格', c.price);
+
+      if (c.drop != null && stock.prevClose) {
+        addPriceTarget(`前日比 -${c.drop}%`, stock.prevClose * (1 - c.drop / 100));
+      }
+
+      if (stock.yearHigh != null) {
+        for (const level of YEAR_HIGH_DROP_LEVELS) {
+          if (!alertPresets[`yearHigh${level}`]) continue;
+          addPriceTarget(`1年高値 -${level}%`, stock.yearHigh * (1 - level / 100));
+        }
+      }
+
+      const rsi = stock.rsi14 ?? getLatestRSI(stock.ticker, 14);
+      const addRsiTarget = (threshold) => {
+        if (!alertPresets[`rsi${threshold}`] || rsi == null) return;
+        if (rsi <= threshold) {
+          candidates.push({ label: `到達済み: RSI ${threshold}`, cls: 'status-error', sort: -0.5 });
+        } else {
+          const pt = rsi - threshold;
+          candidates.push({ label: `RSI ${threshold}まで -${pt.toFixed(1)}pt`, cls: pt <= 5 ? 'status-warn' : 'status-muted', sort: pt + 100 });
+        }
+      };
+      addRsiTarget(20);
+      addRsiTarget(30);
+
+      if (!candidates.length) return { label: '監視条件なし', cls: 'status-muted', sort: Infinity };
+      candidates.sort((a, b) => a.sort - b.sort);
+      return candidates[0];
+    }
+
+    // =============================================
+    // ADD STOCK
+    // =============================================
+    function addStock() {
+      const ticker = document.getElementById('inputTicker').value.trim().toUpperCase();
+      const name = document.getElementById('inputName').value.trim();
+      const market = document.getElementById('inputMarket').value;
+
+      if (!ticker) { showToast('銘柄コードを入力してください', 'error'); return; }
+      if (stocks.find(s => s.ticker === ticker)) { showToast('すでに登録済みです', 'error'); return; }
+
+      const types = getSelectedAlertTypes();
+      const alertConditions = {};
+      if (types.includes('price')) alertConditions.price = parseFloat(document.getElementById('inputTargetPrice').value) || null;
+      if (types.includes('drop')) alertConditions.drop = parseFloat(document.getElementById('inputDropPct').value) || null;
+      if (types.includes('per')) alertConditions.per = parseFloat(document.getElementById('inputPerThreshold').value) || null;
+      if (types.includes('pbr')) alertConditions.pbr = parseFloat(document.getElementById('inputPbrThreshold').value) || null;
+
+      const stock = {
+        id: Date.now(),
+        ticker,
+        name: name || ticker,
+        market,
+        group: 'watch',
+        note: '',
+        buyPrice: null,
+        alertConditions,
+        currentPrice: null,
+        prevClose: null,
+        per: null,
+        pbr: null,
+        lastFetched: null,
+        triggeredAlerts: []
+      };
+
+      stocks.push(stock);
+      saveState();
+      showToast(`${ticker} を追加しました`, 'success');
+
+      // Reset form
+      document.getElementById('inputTicker').value = '';
+      document.getElementById('inputName').value = '';
+      document.querySelectorAll('#alertTypeGroup .checkbox-label').forEach(l => {
+        l.classList.remove('checked');
+        l.querySelector('input').checked = false;
+      });
+      updateConditionFields();
+
+      updateStats();
+      refreshSingleQuote(stock.id);
+      switchTab('watchlist');
+    }
+
+    // =============================================
+    // PRICE FETCHING (Yahoo Finance via cors proxy approach)
+    // Note: Direct Yahoo Finance API calls from browser may be blocked by CORS.
+    // This uses a public endpoint approach.
+    // =============================================
+    function getYahooSymbol(stock) {
+      return stock.market === 'JP' ? stock.ticker + '.T' : stock.ticker;
+    }
+
+    function getKabutanUrl(stock) {
+      if (stock.market !== 'JP') return '';
+      const code = String(stock.ticker || '').replace(/\D/g, '');
+      return /^\d{4}$/.test(code) ? `https://kabutan.jp/stock/?code=${code}` : '';
+    }
+
+    function getYahooForumUrl(stock) {
+      if (stock.market !== 'JP') return '';
+      const code = String(stock.ticker || '').replace(/\D/g, '');
+      return /^\d{4}$/.test(code) ? `https://finance.yahoo.co.jp/quote/${code}.T/forum` : '';
+    }
+
+    function renderTickerBadge(stock) {
+      const badge = `<span class="ticker-badge">${escapeHtml(stock.ticker)}</span>`;
+      const url = getKabutanUrl(stock);
+      if (!url) return badge;
+      return `<a class="ticker-link" href="${url}" target="_blank" rel="noopener" title="株探を開く">${badge}</a>`;
+    }
+
+    function renderExternalLinks(stock) {
+      const yahooForumUrl = getYahooForumUrl(stock);
+      if (!yahooForumUrl) return '';
+      return `<span class="external-links"><a class="external-link" href="${yahooForumUrl}" target="_blank" rel="noopener" title="Yahoo掲示板を開く">掲示板</a></span>`;
+    }
+
+    function getQuotePrice(q) {
+      return q?.regularMarketPrice ?? q?.postMarketPrice ?? q?.preMarketPrice ?? null;
+    }
+
+    function applyQuoteToStock(stock, q) {
+      const price = getQuotePrice(q);
+      if (price == null || isNaN(price)) return false;
+
+      stock.currentPrice = price;
+      stock.prevClose = q.regularMarketPreviousClose ?? q.previousClose ?? stock.prevClose ?? null;
+      stock.currency = q.currency || stock.currency;
+      stock.marketState = q.marketState || stock.marketState || 'CLOSED';
+      stock.lastFetched = new Date().toLocaleTimeString('ja-JP');
+      stock.fetchError = false;
+      stock.fetchErrorReason = null;
+
+      const weekHigh = q.fiftyTwoWeekHigh ?? null;
+      if (weekHigh != null && !isNaN(weekHigh) && weekHigh > 0) {
+        if (stock.yearHigh != null && weekHigh !== stock.yearHigh && Array.isArray(stock.lastTriggeredKeys)) {
+          stock.lastTriggeredKeys = stock.lastTriggeredKeys.filter(k => !k.startsWith(YEAR_HIGH_KEY_PREFIX));
+        }
+        stock.yearHigh = weekHigh;
+        stock.yearHighDate = q.fiftyTwoWeekHighChangePercent != null ? '52週高値' : stock.yearHighDate;
+      }
+
+      const perVal = q.trailingPE ?? q.forwardPE;
+      const pbrVal = q.priceToBook;
+      if (perVal != null && !isNaN(perVal)) stock.per = Math.round(perVal * 100) / 100;
+      if (pbrVal != null && !isNaN(pbrVal)) stock.pbr = Math.round(pbrVal * 100) / 100;
+
+      addHistoryEntry(stock.ticker, stock.per ?? null, stock.pbr ?? null, price);
+      finalizeHistory(stock.ticker);
+      checkAlerts(stock);
+      return true;
+    }
+
+    async function fetchQuoteBatch(batch) {
+      const symbols = batch.map(getYahooSymbol).join(',');
+      const mkSignal = (ms) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return c.signal; };
+      const errors = [];
+
+      const fetchers = [
+        async () => {
+          const url = `${getLocalProxyBase()}/yahoo/quote?symbol=${encodeURIComponent(symbols)}`;
+          const r = await fetch(url, { signal: mkSignal(LOCAL_QUOTE_TIMEOUT_MS), cache: 'no-store' });
+          if (!r.ok) {
+            const t = await r.text().catch(() => '');
+            let detail = '';
+            try { const j = JSON.parse(t); const up = (j.upstreamStatus != null ? ('upstream ' + j.upstreamStatus + ' ') : ''); detail = up + (j.detail || j.body || j.error || ''); } catch { detail = (t || '').replace(/\s+/g, ' ').slice(0, 120); }
+            throw new Error('local proxy quote failed: ' + r.status + (detail ? ' ' + detail : ''));
+          }
+          return await r.json();
+        },
+        async () => {
+          const target = encodeURIComponent(`https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`);
+          const r = await fetch(`https://api.allorigins.win/raw?url=${target}`, { signal: mkSignal(PUBLIC_FALLBACK_TIMEOUT_MS) });
+          if (!r.ok) throw new Error('allorigins quote failed: ' + r.status);
+          return await r.json();
+        }
+      ];
+
+      for (const fetcher of fetchers) {
+        try {
+          const d = await fetcher();
+          const quotes = d?.quoteResponse?.result || [];
+          if (!quotes.length) throw new Error('no quotes');
+          return { quotes, errors };
+        } catch (e) {
+          errors.push(e.message);
+        }
+      }
+      return { quotes: [], errors };
+    }
+
+    async function refreshSingleQuote(stockId) {
+      return await fetchStockPrice(stockId, { range: '5d' });
+    }
+
+    // 複数エンドポイントを順番に試すフォールバック方式
+    // 市場が閉まっていても直近終値を返す
+    async function fetchStockPrice(stockId, options = {}) {
+      const stock = stocks.find(s => s.id === stockId);
+      if (!stock) return;
+      const silent = options.silent === true;
+      const chartRange = options.range || '1y';
+      const isFullChart = chartRange === '1y';
+
+      const symbol = getYahooSymbol(stock);
+      const mkSignal = (ms) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return c.signal; };
+      const chartTimeout = isFullChart ? LOCAL_CHART_TIMEOUT_MS : 12000;
+
+      const errors = [];
+
+      // 試行するAPIリスト（上から順に失敗したら次を使用）
+      const fetchers = [
+        // 0) local proxy (recommended)
+        async () => {
+          const url = `${getLocalProxyBase()}/yahoo/chart?symbol=${encodeURIComponent(symbol)}&interval=1d&range=${encodeURIComponent(chartRange)}`;
+          const r = await fetch(url, { signal: mkSignal(chartTimeout), cache: 'no-store' });
+          if (!r.ok) {
+            const t = await r.text().catch(() => '');
+            let detail = '';
+            try { const j = JSON.parse(t); const up = (j.upstreamStatus != null ? ('upstream ' + j.upstreamStatus + ' ') : ''); detail = up + (j.detail || j.body || j.error || ''); } catch { detail = (t || '').replace(/\\s+/g, ' ').slice(0, 120); }
+            throw new Error('local proxy failed: ' + r.status + (detail ? ' ' + detail : ''));
+          }
+          return await r.json();
+        },
+        // 1) allorigins raw proxy (動作確認済み・最も安定)
+        async () => {
+          const target = encodeURIComponent(
+            `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${chartRange}`
+          );
+          const r = await fetch(`https://api.allorigins.win/raw?url=${target}`, { signal: mkSignal(PUBLIC_FALLBACK_TIMEOUT_MS) });
+          if (!r.ok) throw new Error('allorigins failed: ' + r.status);
+          return await r.json();
+        },
+        // 2) Yahoo Finance v8 直接
+        async () => {
+          const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${chartRange}`;
+          const r = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: mkSignal(PUBLIC_FALLBACK_TIMEOUT_MS) });
+          if (!r.ok) throw new Error('v8 direct failed: ' + r.status);
+          return await r.json();
+        },
+        // 3) allorigins get proxy (JSON wrapper形式)
+        async () => {
+          const target = encodeURIComponent(
+            `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${chartRange}`
+          );
+          const r = await fetch(`https://api.allorigins.win/get?url=${target}`, { signal: mkSignal(PUBLIC_FALLBACK_TIMEOUT_MS) });
+          if (!r.ok) throw new Error('allorigins get failed: ' + r.status);
+          const wrapper = await r.json();
+          return JSON.parse(wrapper.contents);
+        },
+        // 4) corsproxy.io (フォールバック)
+        async () => {
+          const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${chartRange}`)}`, { signal: mkSignal(PUBLIC_FALLBACK_TIMEOUT_MS) });
+          if (!r.ok) throw new Error('corsproxy failed: ' + r.status);
+          return await r.json();
+        }
+      ];
+
+      for (const fetcher of fetchers) {
+        try {
+          const d = await fetcher();
+          const chartResult = d?.chart?.result?.[0];
+          const meta = chartResult?.meta;
+          if (!meta) throw new Error('no meta');
+          const closeSnapshot = computeLatestCloseSnapshot(chartResult);
+          const marketState = meta.marketState || 'CLOSED';
+          const marketPrice = meta.regularMarketPrice ?? closeSnapshot.lastClose;
+
+          stock.currentPrice = (marketState === 'CLOSED' && closeSnapshot.lastClose != null)
+            ? closeSnapshot.lastClose
+            : marketPrice;
+          stock.prevClose = closeSnapshot.prevClose ?? meta.previousClose ?? meta.chartPreviousClose ?? null;
+          stock.currency = meta.currency;
+          stock.marketState = marketState;
+          stock.lastFetched = new Date().toLocaleTimeString('ja-JP');
+          stock.fetchError = false;
+          stock.fetchErrorReason = null;
+          if (isFullChart) {
+            const yearHigh = computeYearHighFromChart(chartResult);
+            if (yearHigh) {
+              if (stock.yearHigh != null && yearHigh.value !== stock.yearHigh) {
+                if (Array.isArray(stock.lastTriggeredKeys)) {
+                  stock.lastTriggeredKeys = stock.lastTriggeredKeys.filter(k => !k.startsWith(YEAR_HIGH_KEY_PREFIX));
+                }
+              }
+              stock.yearHigh = yearHigh.value;
+              stock.yearHighDate = yearHigh.date;
+            } else {
+              stock.yearHigh = null;
+              stock.yearHighDate = null;
+            }
+          }
+          // v8 chart の過去データを履歴に一括保存
+          const timestamps = chartResult.timestamp || [];
+          const closes = chartResult.indicators?.quote?.[0]?.close || [];
+          for (let i = 0; i < timestamps.length; i++) {
+            if (closes[i] != null) {
+              const dateStr = new Date(timestamps[i] * 1000).toISOString().slice(0, 10);
+              addHistoryEntry(stock.ticker, null, null, closes[i], dateStr);
+            }
+          }
+          finalizeHistory(stock.ticker);
+
+          if (isFullChart && needsFundamentalFetch(stock)) {
+            await fetchFundamentals(stock);
+          }
+          checkAlerts(stock);
+          saveState();
+          if (!silent) {
+            renderWatchlist();
+            renderAlerts();
+            renderRanking();
+            renderBuyRanking();
+            renderAlertLog();
+            updateStats();
+            document.getElementById('lastUpdate').textContent = `更新: ${stock.lastFetched}`;
+          }
+          return true; // 成功
+        } catch (e) {
+          errors.push(e.message);
+          console.log('fetcher失敗:', e.message);
+        }
+      }
+
+      stock.fetchError = true;
+      stock.fetchErrorReason = errors.slice(0, 3).join(' | ');
+      stock.lastFetched = '取得失敗';
+      saveState();
+      if (!silent) {
+        renderWatchlist();
+        renderRanking();
+        renderBuyRanking();
+      }
+      return false;
+    }
+    // PER/PBR ファンダメンタルズ取得
+    async function fetchFundamentals(stock) {
+      const symbol = stock.market === 'JP' ? stock.ticker + '.T' : stock.ticker;
+      const mkSignal = (ms) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return c.signal; };
+      const round2 = (v) => Math.round(v * 100) / 100;
+
+      const fetchers = [
+        // 0) local proxy (recommended)
+        async () => {
+          const url = `${getLocalProxyBase()}/yahoo/quote?symbol=${encodeURIComponent(symbol)}`;
+          const r = await fetch(url, { signal: mkSignal(LOCAL_QUOTE_TIMEOUT_MS), cache: 'no-store' });
+          if (!r.ok) {
+            const t = await r.text().catch(() => '');
+            let detail = '';
+            try { const j = JSON.parse(t); const up = (j.upstreamStatus != null ? ('upstream ' + j.upstreamStatus + ' ') : ''); detail = up + (j.detail || j.body || j.error || ''); } catch { detail = (t || '').replace(/\\s+/g, ' ').slice(0, 120); }
+            throw new Error('local proxy quote failed: ' + r.status + (detail ? ' ' + detail : ''));
+          }
+          return await r.json();
+        },
+        // 1) allorigins raw proxy
+        async () => {
+          const target = encodeURIComponent(`https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`);
+          const r = await fetch(`https://api.allorigins.win/raw?url=${target}`, { signal: mkSignal(PUBLIC_FALLBACK_TIMEOUT_MS) });
+          if (!r.ok) throw new Error('allorigins failed: ' + r.status);
+          return await r.json();
+        },
+        // 2) direct
+        async () => {
+          const url = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`;
+          const r = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: mkSignal(PUBLIC_FALLBACK_TIMEOUT_MS) });
+          if (!r.ok) throw new Error('direct failed: ' + r.status);
+          return await r.json();
+        },
+        // 3) allorigins get proxy (JSON wrapper)
+        async () => {
+          const target = encodeURIComponent(`https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`);
+          const r = await fetch(`https://api.allorigins.win/get?url=${target}`, { signal: mkSignal(PUBLIC_FALLBACK_TIMEOUT_MS) });
+          if (!r.ok) throw new Error('allorigins get failed: ' + r.status);
+          const wrapper = await r.json();
+          return JSON.parse(wrapper.contents);
+        },
+        // 4) corsproxy.io
+        async () => {
+          const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`)}`, { signal: mkSignal(PUBLIC_FALLBACK_TIMEOUT_MS) });
+          if (!r.ok) throw new Error('corsproxy failed: ' + r.status);
+          return await r.json();
+        }
+      ];
+
+      for (const fetcher of fetchers) {
+        try {
+          const d = await fetcher();
+          const q = d?.quoteResponse?.result?.[0];
+          if (!q) throw new Error('no quote');
+
+          const perVal = q.trailingPE ?? q.forwardPE;
+          const pbrVal = q.priceToBook;
+          if (perVal != null && !isNaN(perVal)) stock.per = round2(perVal);
+          if (pbrVal != null && !isNaN(pbrVal)) stock.pbr = round2(pbrVal);
+
+          addHistoryEntry(stock.ticker, stock.per ?? null, stock.pbr ?? null, null);
+          finalizeHistory(stock.ticker);
+          return;
+        } catch (e) {
+          console.log('fundamentals fetcher失敗:', e.message);
+        }
+      }
+    }
+
+    async function refreshAllPrices() {
+      if (stocks.length === 0) { showToast('銘柄がありません', 'error'); return; }
+      const btn = document.getElementById('refreshBtn');
+      const label = document.getElementById('refreshLabel');
+      label.innerHTML = '<span class="spinner"></span> 更新中...';
+      btn.disabled = true;
+
+      let done = 0;
+      let failed = 0;
+      const total = stocks.length;
+
+      for (const stock of stocks) {
+        label.innerHTML = `<span class="spinner"></span> 更新中 ${done}/${total}`;
+        const ok = await fetchStockPrice(stock.id, { silent: true, range: '5d' });
+        if (!ok) failed++;
+        done++;
+
+        if (done % 5 === 0 || done === total) {
+          saveState();
+          renderWatchlist();
+          renderRanking();
+          renderBuyRanking();
+          updateStats();
+        }
+      }
+
+      label.textContent = '価格を更新';
+      btn.disabled = false;
+      saveState();
+      renderWatchlist();
+      renderAlerts();
+      renderRanking();
+      renderBuyRanking();
+      renderAlertLog();
+      updateStats();
+      document.getElementById('lastUpdate').textContent = `更新: ${new Date().toLocaleTimeString('ja-JP')}`;
+      showToast(failed ? `価格更新完了: ${total - failed}/${total}件成功` : '価格を更新しました', failed ? 'error' : 'success');
+    }
+    async function refreshAllChartData() {
+      if (stocks.length === 0) { showToast('銘柄がありません', 'error'); return; }
+      const btn = document.getElementById('chartRefreshBtn');
+      const label = document.getElementById('chartRefreshLabel');
+      btn.disabled = true;
+      let done = 0;
+      let failed = 0;
+      const total = stocks.length;
+
+      for (const stock of stocks) {
+        label.innerHTML = `<span class="spinner"></span> 日足更新 ${done}/${total}`;
+        const ok = await fetchStockPrice(stock.id, { silent: true });
+        if (!ok) failed++;
+        done++;
+        if (done % 3 === 0 || done === total) {
+          renderWatchlist();
+          renderRanking();
+          renderBuyRanking();
+          updateStats();
+        }
+      }
+
+      label.textContent = '1年高値/RSI更新';
+      btn.disabled = false;
+      renderWatchlist();
+      renderAlerts();
+      renderRanking();
+      renderBuyRanking();
+      renderAlertLog();
+      updateStats();
+      showToast(failed ? `日足更新完了: ${total - failed}/${total}件成功` : '1年高値/RSI用の日足を更新しました', failed ? 'error' : 'success');
+    }
+
+    // =============================================
+    // ALERT CHECKING
+    // =============================================
+    function addTriggeredAlert(stock, alert) {
+      stock.triggeredAlerts.push(alert);
+    }
+
+    function recordAlertLog(stock, alert) {
+      const entry = {
+        id: Date.now() + Math.random(),
+        time: new Date().toISOString(),
+        ticker: stock.ticker,
+        name: stock.name,
+        group: stock.group || 'watch',
+        type: alert.type,
+        label: alert.label,
+        price: stock.currentPrice,
+        market: stock.market
+      };
+      alertLog.unshift(entry);
+      if (alertLog.length > 300) alertLog = alertLog.slice(0, 300);
+      saveAlertLog();
+    }
+
+    function checkAlerts(stock) {
+      normalizeStock(stock);
+      const prevKeys = new Set(stock.lastTriggeredKeys || []);
+      stock.triggeredAlerts = [];
+      const c = stock.alertConditions || {};
+      const p = stock.currentPrice;
+      if (!p) { stock.lastTriggeredKeys = []; return; }
+
+      if (c.price != null && p <= c.price) {
+        addTriggeredAlert(stock, {
+          type: 'price',
+          key: `price:${c.price}`,
+          label: `${formatPrice(p, stock)} <= target ${formatPrice(c.price, stock)}`
+        });
+      }
+
+      if (stock.buyPrice != null && p <= stock.buyPrice) {
+        addTriggeredAlert(stock, {
+          type: 'buyPrice',
+          key: `buyPrice:${stock.buyPrice}`,
+          label: `買いたい価格 ${formatPrice(stock.buyPrice, stock)} に到達 (${formatPrice(p, stock)})`
+        });
+      }
+
+      if (c.drop != null && stock.prevClose) {
+        const dropPct = ((p - stock.prevClose) / stock.prevClose) * 100;
+        if (dropPct <= -c.drop) {
+          addTriggeredAlert(stock, {
+            type: 'drop',
+            key: `drop:${c.drop}`,
+            label: `${dropPct.toFixed(1)}% drop (threshold ${c.drop}%)`
+          });
+        }
+      }
+
+      if (stock.yearHigh != null) {
+        const yearHigh = stock.yearHigh;
+        for (const level of YEAR_HIGH_DROP_LEVELS) {
+          if (!alertPresets[`yearHigh${level}`]) continue;
+          const threshold = yearHigh * (1 - level / 100);
+          if (p <= threshold) {
+            addTriggeredAlert(stock, {
+              type: 'yearHighDrop',
+              key: `${YEAR_HIGH_KEY_PREFIX}${level}`,
+              label: `1年高値比 -${level}% (${formatPrice(p, stock)} / 高値 ${formatPrice(yearHigh, stock)})`
+            });
+          }
+        }
+      }
+
+      const rsi = getLatestRSI(stock.ticker, 14);
+      stock.rsi14 = rsi != null ? Math.round(rsi * 10) / 10 : null;
+      if (rsi != null) {
+        if (alertPresets.rsi20 && rsi <= 20) {
+          addTriggeredAlert(stock, {
+            type: 'rsi',
+            key: 'rsi:20',
+            label: `RSI(14) ${stock.rsi14} <= 20`
+          });
+        }
+        if (alertPresets.rsi30 && rsi <= 30) {
+          addTriggeredAlert(stock, {
+            type: 'rsi',
+            key: 'rsi:30',
+            label: `RSI(14) ${stock.rsi14} <= 30`
+          });
+        }
+      }
+
+      if (c.per != null) {
+        if (stock.per != null && stock.per <= c.per) {
+          addTriggeredAlert(stock, {
+            type: 'per',
+            key: `per:${c.per}`,
+            label: `PER ${stock.per}x <= ${c.per}x`
+          });
+        } else {
+          addTriggeredAlert(stock, {
+            type: 'per',
+            label: `PER ${stock.per ?? '--'}x (watching <= ${c.per}x)`,
+            monitoring: true
+          });
+        }
+      }
+      if (c.pbr != null) {
+        if (stock.pbr != null && stock.pbr <= c.pbr) {
+          addTriggeredAlert(stock, {
+            type: 'pbr',
+            key: `pbr:${c.pbr}`,
+            label: `PBR ${stock.pbr}x <= ${c.pbr}x`
+          });
+        } else {
+          addTriggeredAlert(stock, {
+            type: 'pbr',
+            label: `PBR ${stock.pbr ?? '--'}x (watching <= ${c.pbr}x)`,
+            monitoring: true
+          });
+        }
+      }
+
+      const currentTriggeredKeys = new Set(
+        stock.triggeredAlerts.filter(a => !a.monitoring).map(a => a.key || `${a.type}:${a.label}`)
+      );
+      let hasNew = false;
+      let firstNew = null;
+      for (const a of stock.triggeredAlerts) {
+        if (a.monitoring) continue;
+        const key = a.key || `${a.type}:${a.label}`;
+        if (!prevKeys.has(key)) {
+          hasNew = true;
+          if (!firstNew) firstNew = a;
+          recordAlertLog(stock, a);
+        }
+      }
+      if (hasNew) {
+        playAlertSound();
+        if (firstNew) showToast(`${stock.ticker} alert: ${firstNew.label}`, 'error');
+      }
+      stock.lastTriggeredKeys = Array.from(currentTriggeredKeys);
+    }
+
+    // =============================================
+    // RENDER WATCHLIST
+    // =============================================
+    function renderWatchlist() {
+      const container = document.getElementById('watchlistContainer');
+      if (stocks.length === 0) {
+        container.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">銘柄が登録されていません</div><div class="empty-sub">「銘柄追加」タブから追加してください</div></div>`;
+        return;
+      }
+
+      const groupFilter = document.getElementById('watchlistGroupFilter')?.value || 'all';
+      const visibleStocks = groupFilter === 'all'
+        ? stocks
+        : stocks.filter(s => (s.group || 'watch') === groupFilter);
+
+      if (visibleStocks.length === 0) {
+        container.innerHTML = `<div class="empty"><div class="empty-icon">📂</div><div class="empty-text">${getGroupLabel(groupFilter)}の銘柄はありません</div><div class="empty-sub">銘柄行のグループ欄から分類できます</div></div>`;
+        return;
+      }
+
+      const statusBadge = (label, cls, title = '') =>
+        `<span class="status-pill ${cls}" title="${escapeHtml(title)}">${escapeHtml(label)}</span>`;
+
+      const renderStatusBadges = (s) => {
+        const badges = [];
+        if (s.fetchError) {
+          badges.push(statusBadge('価格NG', 'status-error', s.fetchErrorReason || '価格取得に失敗'));
+        } else if (s.currentPrice != null) {
+          badges.push(statusBadge('価格OK', 'status-ok'));
+        } else {
+          badges.push(statusBadge('未取得', 'status-muted'));
+        }
+
+        if (s.fetchErrorReason?.includes('local proxy')) {
+          badges.push(statusBadge('プロキシNG', 'status-warn', s.fetchErrorReason));
+        } else if (!s.fetchError && s.currentPrice != null) {
+          badges.push(statusBadge('接続OK', 'status-ok'));
+        }
+
+        const rsi = s.rsi14 ?? getLatestRSI(s.ticker, 14);
+        if (rsi != null) {
+          const rsiText = `RSI ${Math.round(rsi * 10) / 10}`;
+          badges.push(statusBadge(rsiText, rsi <= 20 ? 'status-error' : 'status-ok'));
+        } else {
+          badges.push(statusBadge('RSI待機', 'status-muted', '15日以上の終値が必要'));
+        }
+
+        return `<div class="status-stack">${badges.join('')}</div>`;
+      };
+
+      let html = `<table class="watchlist"><thead><tr>
+    <th>銘柄</th><th>状態</th><th>現在価格</th><th>前日比</th><th>1年高値比</th><th>アラート</th><th>更新</th><th></th>
+  </tr></thead><tbody>`;
+
+      for (const s of sortStocks(visibleStocks)) {
+        normalizeStock(s);
+        const changeVal = s.currentPrice && s.prevClose ? s.currentPrice - s.prevClose : null;
+        const changePct = changeVal && s.prevClose ? (changeVal / s.prevClose * 100) : null;
+        const changeClass = changePct == null ? 'change-neutral' : changePct >= 0 ? 'change-positive' : 'change-negative';
+        const changeSign = changePct != null && changePct >= 0 ? '+' : '';
+
+        const triggered = s.triggeredAlerts?.filter(a => !a.monitoring) || [];
+        const monitoring = s.triggeredAlerts?.filter(a => a.monitoring) || [];
+
+        let alertHtml = '';
+        for (const a of triggered) {
+          alertHtml += `<span class="alert-badge alert-triggered">🔔 ${a.label}</span>`;
+        }
+        for (const a of monitoring) {
+          alertHtml += `<span class="alert-badge alert-active">👁 ${a.label}</span>`;
+        }
+        if (!alertHtml) alertHtml = '<span class="alert-badge alert-inactive">—</span>';
+
+        const marketBadge = (() => {
+          if (!s.marketState) return '';
+          const map = { REGULAR: ['取引中', 'var(--green)'], PRE: ['プレ', 'var(--yellow)'], POST: ['アフター', 'var(--yellow)'], CLOSED: ['終値', 'var(--text-dim)'] };
+          const [label, color] = map[s.marketState] || ['—', 'var(--text-dim)'];
+          return `<span style="font-size:10px;color:${color};background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:3px;margin-left:6px;">${label}</span>`;
+        })();
+
+        const sCurrency = s.market === 'JP' ? '¥' : '$';
+        const yearHighPct = (s.yearHigh != null && s.currentPrice != null) ? ((s.currentPrice / s.yearHigh - 1) * 100) : null;
+        const yearHighClass = yearHighPct == null ? 'change-neutral' : yearHighPct <= -20 ? 'change-negative' : 'change-neutral';
+        const notePreview = s.note ? `<div class="note-preview" title="${escapeHtml(s.note)}">メモ: ${escapeHtml(s.note)}</div>` : '';
+        const buyPricePreview = s.buyPrice != null ? `<div class="mini-line">買いたい: ${formatPrice(s.buyPrice, s)}</div>` : '';
+
+        html += `<tr>
+      <td>
+        ${renderTickerBadge(s)}
+        ${renderExternalLinks(s)}
+        <span class="tag-${s.market.toLowerCase()}" style="margin-left:6px;">${s.market}</span>
+        <div class="stock-name">${s.name !== s.ticker ? s.name : ''}</div>
+        <select class="group-select" onchange="setStockGroup(${s.id}, this.value)">
+          ${renderGroupOptions(s.group || 'watch')}
+        </select>
+        ${buyPricePreview}
+        ${notePreview}
+      </td>
+      <td>${renderStatusBadges(s)}</td>
+      <td>
+        <span class="price-val ${changeClass}">
+          ${s.currentPrice != null ? sCurrency + s.currentPrice.toLocaleString() + marketBadge : '<span class="fetching">—</span>'}
+        </span>
+      </td>
+      <td class="${changeClass}">
+        ${changePct != null ? `${changeSign}${changePct.toFixed(2)}%` : '—'}
+      </td>
+      <td class="${yearHighClass}">
+        ${yearHighPct != null ? yearHighPct.toFixed(2) + '%' : '—'}
+      </td>
+      <td>${alertHtml}</td>
+      <td><span class="fetching" style="cursor:pointer;" onclick="showFetchError(${s.id})" title="${escapeHtml(s.fetchErrorReason || '')}">${s.lastFetched || '—'}${s.fetchError && s.currentPrice != null ? ' <span style="color:var(--yellow);font-size:10px;">(前回値)</span>' : ''}${s.fetchErrorReason ? ' <span style="color:var(--text-dim);font-size:10px;">(' + escapeHtml((s.fetchErrorReason || '').slice(0, 200)) + ')</span>' : ''}</span></td>
+      <td class="row-actions">
+        <button class="btn-chart" onclick="showRSIFor('${s.ticker}')">📊</button>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="editBuyPrice(${s.id})">買値</button>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="editStockNote(${s.id})">メモ</button>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="openAlertModal(${s.id})">🔔</button>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="refreshSingleQuote(${s.id})">↻</button>
+        <button class="btn btn-danger" onclick="removeStock(${s.id})">削除</button>
+      </td>
+    </tr>`;
+      }
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // =============================================
+
+    function showFetchError(stockId) {
+      const s = stocks.find(x => x.id === stockId);
+      if (!s || !s.fetchErrorReason) {
+        showToast('エラー詳細はありません', 'error');
+        return;
+      }
+      alert(s.fetchErrorReason);
+    }
+
+    function setStockGroup(stockId, group) {
+      const s = stocks.find(x => x.id === stockId);
+      if (!s) return;
+      s.group = group;
+      saveState();
+      renderWatchlist();
+      renderRanking();
+      renderBuyRanking();
+      showToast(`${s.ticker} を「${getGroupLabel(group)}」に移動しました`, 'success');
+    }
+
+    function editStockNote(stockId) {
+      const s = stocks.find(x => x.id === stockId);
+      if (!s) return;
+      const next = prompt(`${s.ticker} のメモ`, s.note || '');
+      if (next == null) return;
+      s.note = next.trim();
+      saveState();
+      renderWatchlist();
+      renderRanking();
+      renderBuyRanking();
+      showToast(`${s.ticker} のメモを保存しました`, 'success');
+    }
+
+    function editBuyPrice(stockId) {
+      const s = stocks.find(x => x.id === stockId);
+      if (!s) return;
+      const current = s.buyPrice != null ? String(s.buyPrice) : '';
+      const next = prompt(`${s.ticker} の買いたい価格（空欄で解除）`, current);
+      if (next == null) return;
+      const trimmed = next.trim();
+      if (!trimmed) {
+        s.buyPrice = null;
+      } else {
+        const value = parseFloat(trimmed.replace(/,/g, ''));
+        if (isNaN(value) || value <= 0) {
+          showToast('買いたい価格は正の数値で入力してください', 'error');
+          return;
+        }
+        s.buyPrice = value;
+      }
+      checkAlerts(s);
+      saveState();
+      renderWatchlist();
+      renderAlerts();
+      renderRanking();
+      renderBuyRanking();
+      updateStats();
+      showToast(s.buyPrice != null ? `${s.ticker} の買いたい価格を保存しました` : `${s.ticker} の買いたい価格を解除しました`, 'success');
+    }
+
+    // RENDER ALERTS
+    // =============================================
+    function renderAlerts() {
+      const triggeredEl = document.getElementById('alertTriggeredList');
+      const watchingEl = document.getElementById('alertWatchingList');
+      if (!triggeredEl || !watchingEl) return;
+
+      const triggered = [];
+      const watching = [];
+
+      for (const s of sortStocks(stocks)) {
+        for (const a of (s.triggeredAlerts || [])) {
+          if (a.monitoring) watching.push({ stock: s, alert: a });
+          else triggered.push({ stock: s, alert: a });
+        }
+      }
+
+      function renderList(items, el, isTriggered) {
+        if (items.length === 0) {
+          el.innerHTML = `<div class="empty" style="padding:30px;"><div class="empty-text">${isTriggered ? 'アラートは発動していません ✓' : '監視中のアラートはありません'}</div></div>`;
+          return;
+        }
+        let html = '<div class="alert-list">';
+        for (const item of items) {
+          const currency = item.stock.market === 'JP' ? '¥' : '$';
+          const priceStr = item.stock.currentPrice != null ? currency + item.stock.currentPrice.toLocaleString() : '—';
+          html += `<div class="alert-item ${isTriggered ? 'triggered' : ''}">
+        <div class="alert-info">
+          <div class="alert-title">
+            ${renderTickerBadge(item.stock)}
+            ${renderExternalLinks(item.stock)}
+            &nbsp;${item.stock.name !== item.stock.ticker ? item.stock.name : ''}
+          </div>
+          <div class="alert-desc">${item.alert.label} &nbsp;|&nbsp; 現在: ${priceStr}</div>
+        </div>
+        <span class="alert-status ${isTriggered ? 'status-triggered' : 'status-watching'}">
+          ${isTriggered ? '🔔 発動中' : '👁 監視中'}
+        </span>
+      </div>`;
+        }
+        html += '</div>';
+        el.innerHTML = html;
+      }
+
+      renderList(triggered, triggeredEl, true);
+      renderList(watching, watchingEl, false);
+    }
+
+    function renderRanking() {
+      const container = document.getElementById('rankingContainer');
+      if (!container) return;
+
+      const ranked = stocks
+        .map(s => {
+          normalizeStock(s);
+          const pct = (s.currentPrice != null && s.yearHigh != null)
+            ? ((s.currentPrice / s.yearHigh - 1) * 100)
+            : null;
+          return { stock: s, pct };
+        })
+        .filter(item => item.pct != null)
+        .sort((a, b) => a.pct - b.pct);
+
+      if (ranked.length === 0) {
+        container.innerHTML = `<div class="empty"><div class="empty-icon">📉</div><div class="empty-text">ランキング用データがまだありません</div><div class="empty-sub">価格更新をすると1年高値比を計算できます</div></div>`;
+        return;
+      }
+
+      let html = `<table class="watchlist"><thead><tr>
+        <th>順位</th><th>銘柄</th><th>グループ</th><th>現在価格</th><th>1年高値</th><th>1年高値比</th><th>RSI</th><th>メモ</th>
+      </tr></thead><tbody>`;
+
+      ranked.forEach((item, idx) => {
+        const s = item.stock;
+        const pctClass = item.pct <= -20 ? 'change-negative' : 'change-neutral';
+        html += `<tr>
+          <td class="price-val">${idx + 1}</td>
+          <td>
+            ${renderTickerBadge(s)}
+            ${renderExternalLinks(s)}
+            <span class="tag-${s.market.toLowerCase()}" style="margin-left:6px;">${s.market}</span>
+            <div class="stock-name">${s.name !== s.ticker ? s.name : ''}</div>
+          </td>
+          <td><span class="status-pill status-muted">${getGroupLabel(s.group || 'watch')}</span></td>
+          <td>${formatPrice(s.currentPrice, s)}</td>
+          <td>${formatPrice(s.yearHigh, s)}${s.yearHighDate ? `<div class="stock-name">${s.yearHighDate}</div>` : ''}</td>
+          <td class="${pctClass}">${item.pct.toFixed(2)}%</td>
+          <td>${s.rsi14 != null ? s.rsi14.toFixed ? s.rsi14.toFixed(1) : s.rsi14 : '—'}</td>
+          <td>${s.note ? escapeHtml(s.note) : '<span class="fetching">—</span>'}</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function getBuyPriceDistancePct(stock) {
+      if (stock.currentPrice == null || stock.buyPrice == null || stock.currentPrice <= 0) return null;
+      return ((stock.currentPrice - stock.buyPrice) / stock.currentPrice) * 100;
+    }
+
+    function renderBuyRanking() {
+      const container = document.getElementById('buyRankingContainer');
+      if (!container) return;
+
+      const candidates = stocks
+        .filter(s => (s.group || 'watch') === 'buy')
+        .map(s => {
+          normalizeStock(s);
+          const yearHighPct = (s.currentPrice != null && s.yearHigh != null)
+            ? ((s.currentPrice / s.yearHigh - 1) * 100)
+            : null;
+          const rsi = s.rsi14 ?? getLatestRSI(s.ticker, 14);
+          const buyDistancePct = getBuyPriceDistancePct(s);
+          return { stock: s, yearHighPct, rsi, buyDistancePct };
+        })
+        .sort((a, b) => {
+          const ar = a.buyDistancePct != null && a.buyDistancePct <= 0 ? 1 : 0;
+          const br = b.buyDistancePct != null && b.buyDistancePct <= 0 ? 1 : 0;
+          if (ar !== br) return br - ar;
+          const ay = a.yearHighPct ?? 999;
+          const by = b.yearHighPct ?? 999;
+          if (ay !== by) return ay - by;
+          const arsi = a.rsi ?? 999;
+          const brsi = b.rsi ?? 999;
+          if (arsi !== brsi) return arsi - brsi;
+          const ad = a.buyDistancePct ?? 999;
+          const bd = b.buyDistancePct ?? 999;
+          return ad - bd;
+        });
+
+      if (!candidates.length) {
+        container.innerHTML = `<div class="empty"><div class="empty-icon">🛒</div><div class="empty-text">買い候補グループの銘柄がありません</div><div class="empty-sub">ウォッチリストのグループ欄で「買い候補」に分類してください</div></div>`;
+        return;
+      }
+
+      let html = `<table class="watchlist"><thead><tr>
+        <th>順位</th><th>銘柄</th><th>現在価格</th><th>買いたい価格</th><th>買値まで</th><th>1年高値比</th><th>RSI</th><th>メモ</th>
+      </tr></thead><tbody>`;
+
+      candidates.forEach((item, idx) => {
+        const s = item.stock;
+        const buyClass = item.buyDistancePct == null ? 'change-neutral' : item.buyDistancePct <= 0 ? 'change-positive' : item.buyDistancePct <= 3 ? 'change-negative' : 'change-neutral';
+        const yearHighClass = item.yearHighPct == null ? 'change-neutral' : item.yearHighPct <= -20 ? 'change-negative' : 'change-neutral';
+        html += `<tr>
+          <td class="price-val">${idx + 1}</td>
+          <td>
+            ${renderTickerBadge(s)}
+            ${renderExternalLinks(s)}
+            <span class="tag-${s.market.toLowerCase()}" style="margin-left:6px;">${s.market}</span>
+            <div class="stock-name">${s.name !== s.ticker ? s.name : ''}</div>
+          </td>
+          <td>${formatPrice(s.currentPrice, s)}</td>
+          <td>${s.buyPrice != null ? formatPrice(s.buyPrice, s) : '<span class="fetching">未設定</span>'}</td>
+          <td class="${buyClass}">${item.buyDistancePct == null ? '—' : item.buyDistancePct <= 0 ? '到達済み' : `あと -${item.buyDistancePct.toFixed(1)}%`}</td>
+          <td class="${yearHighClass}">${item.yearHighPct == null ? '—' : item.yearHighPct.toFixed(2) + '%'}</td>
+          <td>${item.rsi != null ? Math.round(item.rsi * 10) / 10 : '—'}</td>
+          <td>${s.note ? escapeHtml(s.note) : '<span class="fetching">—</span>'}</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function renderAlertLog() {
+      const container = document.getElementById('alertLogContainer');
+      if (!container) return;
+
+      const tickerFilter = (document.getElementById('logFilterTicker')?.value || '').trim().toUpperCase();
+      const typeFilter = document.getElementById('logFilterType')?.value || 'all';
+      const groupFilter = document.getElementById('logFilterGroup')?.value || 'all';
+      const daysFilter = document.getElementById('logFilterDays')?.value || 'all';
+      const cutoff = daysFilter === 'all' ? null : Date.now() - parseInt(daysFilter, 10) * 24 * 60 * 60 * 1000;
+
+      const filtered = alertLog.filter(item => {
+        if (tickerFilter && !String(item.ticker || '').toUpperCase().includes(tickerFilter) && !String(item.name || '').toUpperCase().includes(tickerFilter)) return false;
+        if (typeFilter !== 'all' && item.type !== typeFilter) return false;
+        if (groupFilter !== 'all' && (item.group || 'watch') !== groupFilter) return false;
+        if (cutoff != null) {
+          const t = new Date(item.time).getTime();
+          if (isNaN(t) || t < cutoff) return false;
+        }
+        return true;
+      });
+
+      if (!alertLog.length) {
+        container.innerHTML = `<div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">通知履歴はまだありません</div><div class="empty-sub">条件に初めて到達した時点でここに記録されます</div></div>`;
+        return;
+      }
+      if (!filtered.length) {
+        container.innerHTML = `<div class="empty"><div class="empty-icon">🔎</div><div class="empty-text">条件に一致する履歴はありません</div><div class="empty-sub">絞り込み条件を変更してください</div></div>`;
+        return;
+      }
+
+      let html = `<table class="watchlist"><thead><tr>
+        <th>日時</th><th>銘柄</th><th>条件</th><th>価格</th><th>グループ</th>
+      </tr></thead><tbody>`;
+
+      for (const item of filtered.slice(0, 300)) {
+        const stockLike = { ticker: item.ticker, market: item.market || 'JP' };
+        const dt = new Date(item.time);
+        const timeText = isNaN(dt.getTime()) ? item.time : dt.toLocaleString('ja-JP');
+        html += `<tr>
+          <td class="log-time">${escapeHtml(timeText)}</td>
+          <td>
+            ${renderTickerBadge(stockLike)}
+            ${renderExternalLinks(stockLike)}
+            <div class="stock-name">${escapeHtml(item.name || '')}</div>
+          </td>
+          <td><span class="alert-badge alert-triggered">${escapeHtml(item.label)}</span></td>
+          <td>${item.price != null ? formatPrice(item.price, stockLike) : '—'}</td>
+          <td><span class="status-pill status-muted">${getGroupLabel(item.group || 'watch')}</span></td>
+        </tr>`;
+      }
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function clearAlertLog() {
+      if (!confirm('通知履歴をすべて削除しますか？')) return;
+      alertLog = [];
+      saveAlertLog();
+      renderAlertLog();
+      showToast('通知履歴を削除しました', 'success');
+    }
+
+    function updateFetchDashboard() {
+      const okEl = document.getElementById('fetchOkCount');
+      if (!okEl) return;
+
+      const ok = stocks.filter(s => !s.fetchError && s.currentPrice != null).length;
+      const fail = stocks.filter(s => s.fetchError).length;
+      const pending = stocks.filter(s => !s.fetchError && s.currentPrice == null).length;
+      const successful = stocks.filter(s => !s.fetchError && s.currentPrice != null && s.lastFetched);
+      const lastSuccess = successful.length ? successful[successful.length - 1].lastFetched : '--';
+
+      const errorCounts = new Map();
+      for (const s of stocks) {
+        if (!s.fetchErrorReason) continue;
+        const reason = String(s.fetchErrorReason).replace(/\s+/g, ' ').slice(0, 90);
+        errorCounts.set(reason, (errorCounts.get(reason) || 0) + 1);
+      }
+      const topError = [...errorCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+
+      okEl.textContent = ok;
+      document.getElementById('fetchFailCount').textContent = fail;
+      document.getElementById('fetchPendingCount').textContent = pending;
+      document.getElementById('fetchLastSuccess').textContent = lastSuccess;
+      document.getElementById('fetchProxyBase').textContent = `proxy: ${getLocalProxyBase()}`;
+      document.getElementById('fetchTopError').textContent = topError
+        ? `主な失敗理由: ${topError[0]} (${topError[1]}件)`
+        : '主な失敗理由: --';
+    }
+
+    // =============================================
+    // REMOVE STOCK
+    // =============================================
+    function removeStock(id) {
+      stocks = stocks.filter(s => s.id !== id);
+      saveState();
+      renderWatchlist();
+      renderAlerts();
+      renderRanking();
+      renderBuyRanking();
+      updateStats();
+    }
+
+    // =============================================
+    // STATS
+    // =============================================
+    function updateStats() {
+      document.getElementById('statTotal').textContent = stocks.length;
+      const triggered = stocks.reduce((n, s) => n + (s.triggeredAlerts?.filter(a => !a.monitoring).length || 0), 0);
+      const watching = stocks.reduce((n, s) => n + Object.keys(s.alertConditions || {}).filter(k => s.alertConditions[k] != null).length, 0);
+      const bargain = stocks.filter(s => s.alertConditions?.per != null || s.alertConditions?.pbr != null).length;
+      document.getElementById('statTriggered').textContent = triggered;
+      document.getElementById('statWatching').textContent = watching;
+      document.getElementById('statBargain').textContent = bargain;
+      updateFetchDashboard();
+    }
+
+    // =============================================
+    // CSV IMPORT
+    // =============================================
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('uploadZone').classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) processCSV(file);
+    }
+
+    function handleCSV(e) {
+      const file = e.target.files[0];
+      if (file) processCSV(file);
+    }
+
+    function processCSV(file) {
+      function parseText(text) {
+        const lines = text.split('\n').filter(l => l.trim());
+        let added = 0, skipped = 0;
+        const preview = [];
+
+        for (let i = 0; i < lines.length; i++) {
+          const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+
+          // 楽天証券形式: "STK","銘柄コード","年","月","市場コード","銘柄名"
+          if (cols[0] === 'STK' && /^\d{4}$/.test(cols[1])) {
+            const ticker = cols[1];
+            const name = cols[5] || cols[4] || ticker;
+            if (stocks.find(s => s.ticker === ticker)) { skipped++; continue; }
+            stocks.push({
+              id: Date.now() + i, ticker, name, market: 'JP',
+              group: 'watch', note: '', buyPrice: null,
+              alertConditions: {}, currentPrice: null, prevClose: null,
+              lastFetched: null, triggeredAlerts: []
+            });
+            added++;
+            preview.push({ ticker, name });
+            continue;
+          }
+
+          // 汎用形式: 2列目が4桁数字
+          if (cols.length >= 2 && /^\d{4}$/.test(cols[1])) {
+            const ticker = cols[1];
+            const name = cols[5] || cols[2] || ticker;
+            if (stocks.find(s => s.ticker === ticker)) { skipped++; continue; }
+            stocks.push({
+              id: Date.now() + i, ticker, name, market: 'JP',
+              group: 'watch', note: '', buyPrice: null,
+              alertConditions: {}, currentPrice: null, prevClose: null,
+              lastFetched: null, triggeredAlerts: []
+            });
+            added++;
+            preview.push({ ticker, name });
+          }
+        }
+        return { added, skipped, preview };
+      }
+
+      function finalize({ added, skipped, preview }) {
+        saveState();
+        updateStats();
+        if (added === 0) {
+          showToast('銘柄が見つかりませんでした', 'error');
+          document.getElementById('csvPreview').innerHTML =
+            '<p style="color:var(--red);font-size:13px;">楽天証券のウォッチリストCSVを確認してください</p>';
+          return;
+        }
+        showToast(added + '件追加、' + skipped + '件スキップ', 'success');
+        document.getElementById('csvPreview').innerHTML =
+          '<p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">追加された銘柄 (' + added + '件):</p>' +
+          preview.map(p => '<span class="ticker-badge" style="margin:2px 4px;display:inline-block;">' + p.ticker + '</span>').join('');
+        switchTab('watchlist');
+      }
+
+      // Shift-JIS で読み込み（楽天証券はShift-JIS）
+      const readerSJIS = new FileReader();
+      readerSJIS.onload = function (e) {
+        const result = parseText(e.target.result);
+        if (result.added > 0) {
+          finalize(result);
+        } else {
+          // UTF-8 で再試行
+          const readerUTF = new FileReader();
+          readerUTF.onload = function (e2) { finalize(parseText(e2.target.result)); };
+          readerUTF.readAsText(file, 'UTF-8');
+        }
+      };
+      readerSJIS.readAsText(file, 'Shift-JIS');
+    }
+
+    // =============================================
+    // TOAST
+    // =============================================
+    function showToast(msg, type = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // =============================================
+    // ALERT MODAL
+    // =============================================
+    let modalStockId = null;
+
+    function openAlertModal(id) {
+      const stock = stocks.find(s => s.id === id);
+      if (!stock) return;
+      modalStockId = id;
+
+      const currency = stock.market === 'JP' ? '¥' : '$';
+      document.getElementById('modalTicker').textContent = stock.ticker;
+      document.getElementById('modalName').textContent = stock.name !== stock.ticker ? stock.name : '';
+      document.getElementById('modalPrice').textContent =
+        stock.currentPrice != null ? currency + stock.currentPrice.toLocaleString() : '—';
+
+      // 既存設定を反映
+      const c = stock.alertConditions || {};
+      const setVal = (chkId, valId, val) => {
+        const hasVal = val != null;
+        document.getElementById(chkId).checked = hasVal;
+        document.getElementById(valId).value = hasVal ? val : '';
+        document.getElementById(valId).disabled = !hasVal;
+        document.getElementById(valId).style.opacity = hasVal ? '1' : '0.4';
+      };
+      setVal('chkPrice', 'valPrice', c.price);
+      setVal('chkDrop', 'valDrop', c.drop);
+      setVal('chkPer', 'valPer', c.per);
+      setVal('chkPbr', 'valPbr', c.pbr);
+
+      document.getElementById('alertModal').classList.add('open');
+    }
+
+    function closeAlertModal() {
+      document.getElementById('alertModal').classList.remove('open');
+      modalStockId = null;
+    }
+
+    function closeModal(e) {
+      if (e.target.id === 'alertModal') closeAlertModal();
+    }
+
+    function toggleCondInput(key) {
+      const chk = document.getElementById('chk' + key.charAt(0).toUpperCase() + key.slice(1));
+      const inp = document.getElementById('val' + key.charAt(0).toUpperCase() + key.slice(1));
+      inp.disabled = !chk.checked;
+      inp.style.opacity = chk.checked ? '1' : '0.4';
+      if (chk.checked) inp.focus();
+    }
+
+    function saveAlertFromModal() {
+      const stock = stocks.find(s => s.id === modalStockId);
+      if (!stock) return;
+
+      const getVal = (chkId, valId) => {
+        const chk = document.getElementById(chkId);
+        const val = parseFloat(document.getElementById(valId).value);
+        return chk.checked && !isNaN(val) ? val : null;
+      };
+
+      stock.alertConditions = {
+        price: getVal('chkPrice', 'valPrice'),
+        drop: getVal('chkDrop', 'valDrop'),
+        per: getVal('chkPer', 'valPer'),
+        pbr: getVal('chkPbr', 'valPbr'),
+      };
+
+      checkAlerts(stock);
+      saveState();
+      renderWatchlist();
+      renderAlerts();
+      renderRanking();
+      renderBuyRanking();
+      updateStats();
+      closeAlertModal();
+      showToast(`${stock.ticker} のアラートを保存しました`, 'success');
+    }
+    // =============================================
+    // RSI CHART
+    // =============================================
+    function populateRSISelect() {
+      const sel = document.getElementById('rsiStockSelect');
+      const current = sel.value;
+      sel.innerHTML = '';
+      if (stocks.length === 0) {
+        sel.innerHTML = '<option value="">銘柄がありません</option>';
+        return;
+      }
+      for (const s of sortStocks(stocks)) {
+        const opt = document.createElement('option');
+        opt.value = s.ticker;
+        opt.textContent = `${s.ticker} - ${s.name !== s.ticker ? s.name : ''}`;
+        sel.appendChild(opt);
+      }
+      if (current && stocks.find(s => s.ticker === current)) sel.value = current;
+    }
+
+    function computeRSI(closes, period) {
+      if (closes.length < period + 1) return Array(closes.length).fill(null);
+      const rsi = Array(closes.length).fill(null);
+      let gains = 0;
+      let losses = 0;
+      for (let i = 1; i <= period; i++) {
+        const change = closes[i] - closes[i - 1];
+        gains += change > 0 ? change : 0;
+        losses += change < 0 ? -change : 0;
+      }
+      let avgGain = gains / period;
+      let avgLoss = losses / period;
+      rsi[period] = avgLoss === 0 ? 100 : 100 - 100 / (1 + (avgGain / avgLoss));
+
+      for (let i = period + 1; i < closes.length; i++) {
+        const change = closes[i] - closes[i - 1];
+        const gain = change > 0 ? change : 0;
+        const loss = change < 0 ? -change : 0;
+        avgGain = (avgGain * (period - 1) + gain) / period;
+        avgLoss = (avgLoss * (period - 1) + loss) / period;
+        rsi[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + (avgGain / avgLoss));
+      }
+      return rsi;
+    }
+
+    function buildRSISeries(ticker, period = 14) {
+      const entries = (history[ticker] || []).filter(h => h.price != null);
+      const labels = entries.map(h => h.date.slice(5));
+      const dates = entries.map(h => h.date);
+      const closes = entries.map(h => h.price);
+      const rsi = computeRSI(closes, period);
+      return { labels, dates, rsi };
+    }
+
+    function getLatestRSI(ticker, period = 14) {
+      const series = buildRSISeries(ticker, period);
+      for (let i = series.rsi.length - 1; i >= 0; i--) {
+        if (series.rsi[i] != null) return series.rsi[i];
+      }
+      return null;
+    }
+
+    function renderRSI() {
+      const ticker = document.getElementById('rsiStockSelect').value;
+      const viewPeriod = parseInt(document.getElementById('rsiPeriod').value) || 90;
+      const canvas = document.getElementById('rsiChart');
+      const noData = document.getElementById('rsiNoData');
+
+      const series = buildRSISeries(ticker, 14);
+      if (series.labels.length === 0) {
+        canvas.style.display = 'none';
+        noData.style.display = '';
+        noData.textContent = 'データがありません。価格を更新してください。';
+        return;
+      }
+
+      const labels = series.labels.slice(-viewPeriod);
+      const rsiData = series.rsi.slice(-viewPeriod);
+      const hasRSI = rsiData.some(v => v != null);
+      if (!hasRSI) {
+        canvas.style.display = 'none';
+        noData.style.display = '';
+        noData.textContent = 'RSI計算に十分なデータがありません（15日以上必要）。';
+        return;
+      }
+
+      canvas.style.display = '';
+      noData.style.display = 'none';
+
+      if (rsiChart) rsiChart.destroy();
+
+      const datasets = [
+        {
+          label: 'RSI (14)',
+          data: rsiData,
+          borderColor: '#00d4ff',
+          backgroundColor: 'rgba(0,212,255,0.08)',
+          borderWidth: 2,
+          tension: 0.3,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          fill: false
+        }
+      ];
+
+      const scales = {
+        x: {
+          ticks: { color: '#3d4f6e', font: { size: 11 }, maxTicksLimit: 15 },
+          grid: { color: 'rgba(30,45,69,0.5)' }
+        },
+        y: {
+          type: 'linear',
+          position: 'left',
+          min: 0,
+          max: 100,
+          title: { display: true, text: 'RSI', color: '#00d4ff', font: { size: 12 } },
+          ticks: { color: '#00d4ff', font: { size: 11 } },
+          grid: { color: 'rgba(30,45,69,0.3)' }
+        }
+      };
+
+      rsiChart = new Chart(canvas, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              labels: { color: '#6b7fa3', font: { family: "'Noto Sans JP', sans-serif", size: 12 } }
+            },
+            tooltip: {
+              backgroundColor: '#1a2236',
+              borderColor: '#1e2d45',
+              borderWidth: 1,
+              titleColor: '#e8edf5',
+              bodyColor: '#e8edf5'
+            }
+          },
+          animation: false,
+          animations: false,
+          transitions: {
+            active: { animation: { duration: 0 } },
+            resize: { animation: { duration: 0 } },
+            show: { animation: { duration: 0 } },
+            hide: { animation: { duration: 0 } }
+          },
+          scales
+        }
+      });
+    }
+
+    function showRSIFor(ticker) {
+      switchTab('rsi');
+      const sel = document.getElementById('rsiStockSelect');
+      sel.value = ticker;
+      renderRSI();
+    }
+
+    // =============================================
+    // INIT
+    // =============================================
+    saveState();
+    renderWatchlist();
+    renderPresetControls();
+    renderAlerts();
+    renderRanking();
+    renderBuyRanking();
+    renderAlertLog();
+    updateStats();
+
+    // Auto-refresh every 15 minutes if stocks exist
+    setInterval(() => {
+      if (stocks.length > 0 && document.visibilityState === 'visible') {
+        refreshAllPrices();
+      }
+    }, 15 * 60 * 1000);
+
+    // Initial price fetch for all stocks
+    if (stocks.length > 0) {
+      setTimeout(() => {
+        refreshAllPrices();
+      }, 500);
+    }
+  </script>
+</body>
+
+</html>
