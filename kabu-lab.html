@@ -73,8 +73,8 @@
     .form-grid { display: grid; grid-template-columns: 150px 1fr 135px auto; gap: 11px; align-items: end; }
     .field { display: flex; flex-direction: column; gap: 7px; }
     label { color: var(--muted); font: 900 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
-    input, select { width: 100%; border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; color: var(--ink); background: rgba(255,255,255,.64); outline: none; }
-    input:focus, select:focus { border-color: rgba(191,77,40,.65); box-shadow: 0 0 0 4px rgba(191,77,40,.12); }
+    input, select, textarea { width: 100%; border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; color: var(--ink); background: rgba(255,255,255,.64); outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: rgba(191,77,40,.65); box-shadow: 0 0 0 4px rgba(191,77,40,.12); }
     .check { display: inline-flex; align-items: center; gap: 8px; color: var(--sub); font-size: 13px; user-select: none; }
     .check input { width: auto; }
     .actions { display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
@@ -135,14 +135,20 @@
     .ai-list { margin: 0; padding-left: 18px; color: var(--sub); line-height: 1.65; }
     .ai-list li + li { margin-top: 6px; }
     .prompt-box { margin: 12px 0 0; max-height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-word; padding: 14px; border-radius: 18px; border: 1px solid rgba(23,32,51,.12); background: rgba(255,255,255,.72); color: var(--sub); font: 12px/1.75 Consolas, "Yu Gothic", monospace; }
+    .memo-input { min-height: 180px; resize: vertical; font: 13px/1.7 "Yu Gothic", "Meiryo", sans-serif; }
+    .history-list { display: grid; gap: 9px; margin-top: 10px; }
+    .history-item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.52); border: 1px solid rgba(23,32,51,.1); }
+    .checklist-grid { display: grid; gap: 10px; }
+    .checklist-item { display: grid; grid-template-columns: minmax(180px, .55fr) 1fr; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.52); border: 1px solid rgba(23,32,51,.1); }
+    .diff-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .mini-note { margin-top: 12px; color: var(--muted); font-size: 12px; line-height: 1.7; }
     .toast { position: fixed; right: 20px; bottom: 20px; z-index: 20; max-width: min(440px, calc(100vw - 40px)); padding: 14px 16px; border-radius: 16px; color: #fff; background: var(--ink); box-shadow: 0 18px 42px rgba(23,32,51,.22); opacity: 0; transform: translateY(12px); pointer-events: none; transition: .2s ease; line-height: 1.55; font-weight: 900; }
     .toast.show { opacity: 1; transform: translateY(0); }
     .toast.error { background: var(--red); }
     .toast.success { background: var(--green); }
     .toast.warn { background: var(--gold); color: var(--ink); }
-    @media (max-width: 1060px) { .hero, .controls, .grid-2, .ai-columns { grid-template-columns: 1fr; } .form-grid, .metrics, .analysis-grid { grid-template-columns: repeat(2, 1fr); } .actions { justify-content: flex-start; } }
-    @media (max-width: 720px) { .shell { width: min(100% - 22px, 1380px); padding-top: 14px; } .hero-main, .hero-side, .card { border-radius: 20px; padding: 18px; } .form-grid, .metrics, .analysis-grid { grid-template-columns: 1fr; } .table-wrap { overflow-x: auto; } table { min-width: 980px; } .log-item { grid-template-columns: 1fr; } .proxy-row { flex-direction: column; } }
+    @media (max-width: 1060px) { .hero, .controls, .grid-2, .ai-columns, .diff-grid { grid-template-columns: 1fr; } .form-grid, .metrics, .analysis-grid { grid-template-columns: repeat(2, 1fr); } .actions { justify-content: flex-start; } }
+    @media (max-width: 720px) { .shell { width: min(100% - 22px, 1380px); padding-top: 14px; } .hero-main, .hero-side, .card { border-radius: 20px; padding: 18px; } .form-grid, .metrics, .analysis-grid, .checklist-item { grid-template-columns: 1fr; } .table-wrap { overflow-x: auto; } table { min-width: 980px; } .log-item { grid-template-columns: 1fr; } .proxy-row { flex-direction: column; } }
   </style>
 </head>
 <body>
@@ -231,8 +237,15 @@
       </div>
       <div class="card" style="margin-bottom:14px;">
         <div class="card-title"><span>投資分析レポート</span><span class="subtle">APIキー不要</span></div>
+        <div class="form-grid" style="grid-template-columns: minmax(260px, 1.6fr) minmax(180px, .8fr); margin-bottom:12px;">
+          <div class="field"><label for="promptIrSelect">Prompt IR</label><select id="promptIrSelect"></select></div>
+          <div class="field"><label for="promptTemplateSelect">Template</label><select id="promptTemplateSelect"><option value="auto">自動選択</option><option value="earnings">決算短信分析</option><option value="material">決算説明資料分析</option><option value="forecast">業績修正/配当IR分析</option></select></div>
+        </div>
         <div class="actions" style="justify-content:flex-start;">
           <button class="btn primary" id="copyIrPromptBtn">決算IRプロンプトをコピー</button>
+          <button class="btn ghost" id="openPromptIrBtn">選択IRを開く</button>
+          <button class="btn ghost" id="saveIrPromptBtn">Markdown保存</button>
+          <button class="btn danger" id="clearPromptHistoryBtn">履歴削除</button>
           <button class="btn green" id="runAiAnalysisBtn">分析レポートを生成</button>
           <button class="btn ghost" id="copyAiMemoBtn">ChatGPT用レポートをコピー</button>
           <button class="btn ghost" id="clearAiAnalysisBtn">レポート削除</button>
@@ -250,7 +263,7 @@
         <div class="card-title"><span>投資分析レポートについて</span><span class="subtle">課金不要</span></div>
         <div class="signals">
           <div class="signal good">分析レポートは、決算IR、業績予想IR、配当IR、PER/PBR/EPS、直近テクニカルを使ってローカル生成します。</div>
-          <div class="signal">決算短信を深掘りしたい場合は、「決算IRプロンプトをコピー」でWeb版ChatGPTへ貼り付けできます。</div>
+          <div class="signal">決算短信や決算説明資料を深掘りしたい場合は、IRとテンプレートを選んでWeb版ChatGPTへ貼り付けできます。</div>
           <div class="signal bad">ローカル分析はルールベースです。未取得データは要確認として表示します。最終判断は必ずIR本文や公式資料で確認してください。</div>
         </div>
       </div>
@@ -266,6 +279,18 @@
     const STORAGE_LOG = 'kabu_lab_alert_log_v1';
     const STORAGE_PROXY = 'kabu_lab_proxy_v7';
     const IR_DAYS = 31;
+    const CHECKLIST_ITEMS = [
+      { key: 'sales', label: '売上高', hint: 'YoY/QoQ、数量・単価・為替の影響' },
+      { key: 'operatingProfit', label: '営業利益', hint: '利益率、原価、販管費、一過性要因' },
+      { key: 'guidance', label: '通期予想', hint: '上方/下方/据え置き、進捗率' },
+      { key: 'segment', label: 'セグメント', hint: '伸びた事業、落ちた事業、利益率変化' },
+      { key: 'ordersInventory', label: '受注/在庫', hint: '先行指標、在庫積み上がり、需要減速' },
+      { key: 'cashflow', label: '営業CF/FCF', hint: '利益とキャッシュのズレ、運転資金' },
+      { key: 'balanceSheet', label: '財務健全性', hint: '自己資本比率、有利子負債、流動性' },
+      { key: 'shareholderReturn', label: '株主還元', hint: '配当、自己株買い、配当性向' },
+      { key: 'risks', label: 'リスク', hint: 'コスト増、競争、為替、規制、需要' },
+      { key: 'nextWatch', label: '次回確認点', hint: '次決算まで追うKPIとイベント' }
+    ];
     const $ = (id) => document.getElementById(id);
     let stocks = loadJson(STORAGE_STOCKS, []);
     let alertLog = loadJson(STORAGE_LOG, []);
@@ -291,6 +316,10 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function escapeJsArg(value) {
+      return escapeHtml(String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' '));
     }
 
     function getProxyBase() {
@@ -323,6 +352,26 @@
       stock.aiLoading = !!stock.aiLoading;
       stock.irPrompt = stock.irPrompt || null;
       stock.irPromptError ??= null;
+      stock.irPromptHistory = Array.isArray(stock.irPromptHistory) ? stock.irPromptHistory.slice(0, 10) : [];
+      stock.selectedPromptIrId = stock.selectedPromptIrId || null;
+      stock.promptTemplate = stock.promptTemplate || 'auto';
+      stock.aiResponseNotes = Array.isArray(stock.aiResponseNotes) ? stock.aiResponseNotes.slice(0, 20) : [];
+      stock.aiResponseDraft = stock.aiResponseDraft || '';
+      stock.earningsEvent = stock.earningsEvent && typeof stock.earningsEvent === 'object' ? stock.earningsEvent : {};
+      stock.earningsEvent.status = stock.earningsEvent.status || '未確認';
+      stock.earningsEvent.nextDate = stock.earningsEvent.nextDate || '';
+      stock.earningsEvent.lastDate = stock.earningsEvent.lastDate || '';
+      stock.earningsEvent.memo = stock.earningsEvent.memo || '';
+      stock.analysisChecklist = stock.analysisChecklist && typeof stock.analysisChecklist === 'object' ? stock.analysisChecklist : {};
+      for (const item of CHECKLIST_ITEMS) {
+        const current = stock.analysisChecklist[item.key] && typeof stock.analysisChecklist[item.key] === 'object' ? stock.analysisChecklist[item.key] : {};
+        stock.analysisChecklist[item.key] = { checked: !!current.checked, note: current.note || '' };
+      }
+      stock.thesisMemo = stock.thesisMemo && typeof stock.thesisMemo === 'object' ? stock.thesisMemo : {};
+      stock.thesisMemo.bull = stock.thesisMemo.bull || '';
+      stock.thesisMemo.bear = stock.thesisMemo.bear || '';
+      stock.thesisMemo.watch = stock.thesisMemo.watch || '';
+      stock.thesisMemo.updatedAt = stock.thesisMemo.updatedAt || '';
       stock.warning ??= null;
       delete stock.activeDropLevels;
       delete stock.yearHigh;
@@ -787,6 +836,47 @@
       return (stock.irItems || []).find(isEarningsIr) || null;
     }
 
+    function getPromptIrItems(stock) {
+      return (stock?.irItems || []).filter((item) => item?.url);
+    }
+
+    function irItemKey(item) {
+      return String(item?.id || `${item?.date || ''}|${item?.time || ''}|${item?.title || ''}|${item?.url || ''}`);
+    }
+
+    function getSelectedPromptIr(stock) {
+      const items = getPromptIrItems(stock);
+      if (!items.length) return null;
+      const selectedId = $('promptIrSelect')?.value || stock?.selectedPromptIrId || stock?.irPrompt?.item?.id;
+      return items.find((item) => irItemKey(item) === String(selectedId))
+        || items.find(isEarningsIr)
+        || items[0];
+    }
+
+    function inferPromptTemplate(item) {
+      const title = item?.title || '';
+      const category = item?.category || '';
+      if (/業績予想|上方修正|下方修正|通期予想|修正|配当|剰余金|株主優待/.test(`${category} ${title}`)) return 'forecast';
+      if (/決算説明|決算補足|説明資料|補足資料|Presentation|Supplementary|IR資料|投資家/i.test(`${category} ${title}`)) return 'material';
+      return 'earnings';
+    }
+
+    function promptTemplateLabel(type) {
+      return type === 'material'
+        ? '決算説明資料分析'
+        : type === 'forecast'
+          ? '業績修正/配当IR分析'
+          : '決算短信分析';
+    }
+
+    function promptTemplateDescription(type) {
+      return type === 'material'
+        ? '経営陣メッセージ、KPI、成長ドライバー、資料で強調されている論点を深掘りします。'
+        : type === 'forecast'
+          ? '業績修正、配当、自己株式取得などの差分と株価インパクトを中心に見ます。'
+          : '売上、利益、進捗率、セグメント、財務健全性を決算短信ベースで確認します。';
+    }
+
     function isPlaceholderName(stock) {
       return !stock.name || stock.name === stock.code || stock.name === yahooSymbol(stock);
     }
@@ -1231,7 +1321,7 @@
       return item?.date ? `${item.date} 開示分（タイトルから決算期を要確認）` : 'タイトルから決算期を要確認';
     }
 
-    function buildEarningsIrPrompt(stock, item) {
+    function buildEarningsIrPrompt(stock, item, templateType = 'earnings') {
       const company = companyNameForPrompt(stock);
       const code = stock?.code || '未取得';
       const period = extractEarningsPeriod(item);
@@ -1239,10 +1329,12 @@
       const title = item?.title || '未取得';
       const disclosedAt = [item?.date, item?.time].filter(Boolean).join(' ') || '未取得';
       const price = stock?.price == null ? '未取得' : formatPrice(stock.price, stock);
-      return [
+      const type = templateType === 'auto' ? inferPromptTemplate(item) : templateType;
+      const templateName = promptTemplateLabel(type);
+      const commonHeader = [
         'あなたは10年以上の経験を持つ辛口の機関投資家向け株式アナリストです。',
         '',
-        '以下の決算短信（または決算資料）の全文を丁寧に読み込んで、以下のフォーマットで分析レポートを作成してください。',
+        '以下のIR資料の全文を丁寧に読み込んで、数字・根拠・会社コメントを分けながら分析してください。',
         '',
         '【入力情報】',
         `株式会社: ${company}`,
@@ -1252,8 +1344,73 @@
         `IRタイトル: ${title}`,
         `開示日時: ${disclosedAt}`,
         `現在株価: ${price}`,
+        `分析テンプレート: ${templateName}`,
         '',
         `【企業名・決算期】：${company}（証券コード: ${code}、${period}）`,
+        ''
+      ];
+
+      if (type === 'material') {
+        return [
+          ...commonHeader,
+          '1. 【資料全体の結論】',
+          '   - 経営陣が最も伝えたいメッセージを3点に要約',
+          '   - 数字で裏付けられている主張と、まだ確認が必要な主張を分ける',
+          '',
+          '2. 【業績とKPIの確認】',
+          '   - 売上高・営業利益・利益率・受注・在庫・単価など重要KPIの変化',
+          '   - 前年同期比、前四半期比、会社計画比で見た強弱',
+          '',
+          '3. 【セグメント・成長ドライバー】',
+          '   - 伸びている事業、足を引っ張っている事業、利益率が変化した事業',
+          '   - 一過性要因と構造要因を分けて評価',
+          '',
+          '4. 【経営陣トーンとガイダンス】',
+          '   - 強気・慎重・中立のどれに近いか',
+          '   - 通期計画達成に必要な前提、リスク、未達要因',
+          '',
+          '5. 【投資家向けの論点】',
+          '   - 次回決算までに確認すべき論点5つ',
+          '   - 株価に効きそうなカタリストと懸念材料',
+          '',
+          '分析は客観的かつ批判的に。投資助言ではなく、あくまで分析材料としてまとめてください。',
+          '',
+          '注意: PDF URLを直接開けない場合は、こちらにPDF本文を貼るよう依頼してください。'
+        ].join('\n');
+      }
+
+      if (type === 'forecast') {
+        return [
+          ...commonHeader,
+          '1. 【開示内容の要約】',
+          '   - 上方修正、下方修正、据え置き、配当修正、自己株式取得など開示の種類を明確化',
+          '   - 修正前と修正後の売上高・営業利益・経常利益・純利益・EPS・配当の差分',
+          '',
+          '2. 【修正理由の妥当性】',
+          '   - 数量、価格、為替、原価、販管費、減損、一過性要因など主因を分解',
+          '   - 一過性か継続性があるかを評価',
+          '',
+          '3. 【サプライズ度】',
+          '   - 会社予想、市場コンセンサス、直近株価動向に対してポジティブ/ネガティブ/中立か',
+          '   - 特に驚きが大きい数字または文言',
+          '',
+          '4. 【株主還元・財務影響】',
+          '   - 配当性向、DOE、自己株買い、キャッシュフロー、財務余力への影響',
+          '   - 還元強化が持続可能か',
+          '',
+          '5. 【投資判断のポイント】',
+          '   - 短期（1-3ヶ月）と中期（6-12ヶ月）の株価への影響',
+          '   - 次に確認すべきIR、決算、KPI',
+          '',
+          '分析は客観的かつ批判的に。投資助言ではなく、あくまで分析材料としてまとめてください。',
+          '',
+          '注意: PDF URLを直接開けない場合は、こちらにPDF本文を貼るよう依頼してください。'
+        ].join('\n');
+      }
+
+      return [
+        ...commonHeader,
+        '以下の決算短信（または決算資料）の全文を丁寧に読み込んで、以下のフォーマットで分析レポートを作成してください。',
         '',
         '1. 【業績ハイライト】',
         '   - 売上高・営業利益・経常利益・純利益の前年同期比（YoY）と前四半期比（QoQ）の増減率',
@@ -1303,23 +1460,169 @@
       return `<div class="signals" style="margin-top:12px;">${list.map((section) => `<div class="signal"><strong>${escapeHtml(section.title)}</strong>${renderAiList(section.items)}</div>`).join('')}</div>`;
     }
 
+    function renderPromptHistory(stock) {
+      const history = (stock.irPromptHistory || []).slice(0, 6);
+      if (!history.length) return '';
+      return `<div class="signals" style="margin-top:12px;"><div class="signal"><strong>プロンプト履歴</strong><div class="history-list">${history.map((entry) => {
+        const title = `${formatDateTime(entry.generatedAt)} / ${promptTemplateLabel(entry.template || 'earnings')} / ${entry.item?.title || 'IR'}`;
+        return `<div class="history-item"><div><div>${escapeHtml(title)}</div><div class="subtle">${escapeHtml(entry.item?.date || '')} ${entry.item?.url ? `<a href="${escapeHtml(entry.item.url)}" target="_blank" rel="noopener noreferrer">PDF</a>` : ''}</div></div><button class="btn small ghost" onclick="copyPromptHistory('${escapeJsArg(stock.id)}', '${escapeJsArg(entry.id)}')">再コピー</button></div>`;
+      }).join('')}</div></div></div>`;
+    }
+
+    function renderSelectedIrGuide(stock) {
+      const selected = getSelectedPromptIr(stock);
+      if (!selected) return '<div class="signal warn">プロンプトに使うIRが選択されていません。先にIR更新を実行してください。</div>';
+      const templateChoice = $('promptTemplateSelect')?.value || stock.promptTemplate || 'auto';
+      const template = templateChoice === 'auto' ? inferPromptTemplate(selected) : templateChoice;
+      const cls = isEarningsIr(selected) || template !== 'earnings' ? 'info' : 'warn';
+      const warning = cls === 'warn'
+        ? '<div style="margin-top:8px;">注意: 選択IRは決算短信ではない可能性があります。必要ならテンプレートを「決算説明資料分析」または「業績修正/配当IR分析」に切り替えてください。</div>'
+        : '';
+      return `<div class="signal ${cls}"><strong>選択中IR</strong><div style="margin-top:8px;">${escapeHtml(selected.date || '')} ${escapeHtml(selected.category || 'IR')} / ${escapeHtml(selected.title || '')}</div><div style="margin-top:8px;">使用テンプレート: ${escapeHtml(promptTemplateLabel(template))} - ${escapeHtml(promptTemplateDescription(template))}</div>${warning}</div>`;
+    }
+
     function renderIrPromptCard(stock) {
       const prompt = stock.irPrompt;
-      const latest = findLatestEarningsIr(stock);
+      const selected = getSelectedPromptIr(stock);
       if (stock.irPromptError && !prompt) {
         return `<div class="card" style="margin-top:16px;"><div class="card-title"><span>決算IRプロンプト</span><span class="subtle">error</span></div><div class="signal bad">${escapeHtml(stock.irPromptError)}</div></div>`;
       }
       if (!prompt) {
-        return `<div class="card" style="margin-top:16px;"><div class="card-title"><span>決算IRプロンプト</span><span class="subtle">ready</span></div><div class="empty"><strong>プロンプトはまだ作成されていません</strong>${latest ? escapeHtml(`${latest.date} ${latest.title} のPDF URLを入れて作成できます。`) : '先にIR更新を実行してください。'}</div></div>`;
+        return `<div class="card" style="margin-top:16px;"><div class="card-title"><span>決算IRプロンプト</span><span class="subtle">ready</span></div><div class="signals">${renderSelectedIrGuide(stock)}</div><div class="empty" style="margin-top:12px;"><strong>プロンプトはまだ作成されていません</strong>${selected ? escapeHtml(`${selected.date} ${selected.title} のPDF URLを入れて作成できます。`) : '先にIR更新を実行してください。'}</div>${renderPromptHistory(stock)}</div>`;
       }
       return `<div class="card" style="margin-top:16px;">
         <div class="card-title"><span>決算IRプロンプト</span><span class="subtle">${formatDateTime(prompt.generatedAt)}</span></div>
         ${stock.irPromptError ? `<div class="signal bad">${escapeHtml(stock.irPromptError)}</div>` : ''}
         <div class="signals">
-          <div class="signal info"><strong>${escapeHtml(prompt.item?.date || '')} ${escapeHtml(prompt.item?.title || '')}</strong>${prompt.item?.url ? `<div style="margin-top:8px;"><a href="${escapeHtml(prompt.item.url)}" target="_blank" rel="noopener noreferrer">PDFを開く</a></div>` : ''}</div>
+          ${renderSelectedIrGuide(stock)}
+          <div class="signal info"><strong>${escapeHtml(prompt.item?.date || '')} ${escapeHtml(prompt.item?.title || '')}</strong><div style="margin-top:8px;">テンプレート: ${escapeHtml(promptTemplateLabel(prompt.template || 'earnings'))}</div>${prompt.item?.url ? `<div style="margin-top:8px;"><a href="${escapeHtml(prompt.item.url)}" target="_blank" rel="noopener noreferrer">PDFを開く</a></div>` : ''}</div>
         </div>
         <pre class="prompt-box">${escapeHtml(prompt.text || '')}</pre>
+        ${renderPromptHistory(stock)}
         <div class="mini-note">上の内容は「決算IRプロンプトをコピー」ボタンでクリップボードに入ります。ChatGPT Webなどへ貼り付けて使ってください。</div>
+      </div>`;
+    }
+
+    function renderAiResponseNotesCard(stock) {
+      const notes = (stock.aiResponseNotes || []).slice(0, 8);
+      const prompt = stock.irPrompt;
+      const currentIr = prompt?.item?.title || getSelectedPromptIr(stock)?.title || '選択中IR';
+      const history = notes.length
+        ? `<div class="history-list">${notes.map((note) => {
+          const title = `${formatDateTime(note.createdAt)} / ${promptTemplateLabel(note.template || 'earnings')} / ${note.item?.title || 'AI回答'}`;
+          const preview = String(note.text || '').replace(/\s+/g, ' ').slice(0, 140);
+          return `<div class="history-item"><div><div>${escapeHtml(title)}</div><div class="subtle">${escapeHtml(preview)}${note.text && note.text.length > 140 ? '...' : ''}</div></div><div class="actions" style="justify-content:flex-end;"><button class="btn small ghost" onclick="copyAiResponseNote('${escapeJsArg(stock.id)}', '${escapeJsArg(note.id)}')">コピー</button><button class="btn small danger" onclick="deleteAiResponseNote('${escapeJsArg(stock.id)}', '${escapeJsArg(note.id)}')">削除</button></div></div>`;
+        }).join('')}</div>`
+        : '<div class="empty" style="padding:22px;"><strong>保存済みAI回答はまだありません</strong>ChatGPT Webの回答を貼り付けて保存できます。</div>';
+      return `<div class="card" style="margin-top:16px;">
+        <div class="card-title"><span>ChatGPT回答メモ</span><span class="subtle">${notes.length} notes</span></div>
+        <div class="signal info">対象: ${escapeHtml(currentIr)}。ChatGPT Webの回答をここに貼り付けると、銘柄ごとの分析履歴として保存できます。</div>
+        <div class="field" style="margin-top:12px;"><label for="aiResponseNoteInput">AI Response</label><textarea class="memo-input" id="aiResponseNoteInput" placeholder="ChatGPTの分析結果をここに貼り付け" oninput="saveAiResponseDraft(this.value)">${escapeHtml(stock.aiResponseDraft || '')}</textarea></div>
+        <div class="actions" style="justify-content:flex-start; margin-top:10px;">
+          <button class="btn primary" onclick="saveAiResponseNote()">回答を保存</button>
+          <button class="btn ghost" onclick="exportAiResponseNotesMarkdown()">回答履歴をMarkdown保存</button>
+          <button class="btn danger" onclick="clearAiResponseNotes()">回答履歴削除</button>
+        </div>
+        <div class="signals" style="margin-top:12px;"><div class="signal"><strong>保存済み回答</strong>${history}</div></div>
+      </div>`;
+    }
+
+    function daysUntilText(dateText) {
+      if (!dateText) return '未設定';
+      const target = new Date(`${dateText}T00:00:00`);
+      if (isNaN(target.getTime())) return '日付を確認';
+      const today = new Date();
+      const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const diff = Math.round((target - base) / 86400000);
+      if (diff === 0) return '本日';
+      if (diff > 0) return `${diff}日後`;
+      return `${Math.abs(diff)}日前`;
+    }
+
+    function renderEarningsEventCard(stock) {
+      const event = stock.earningsEvent || {};
+      const status = event.status || '未確認';
+      const statusOptions = ['未確認', '決算前', '発表済み', '分析中', '分析完了', '要フォロー']
+        .map((value) => `<option value="${escapeHtml(value)}" ${status === value ? 'selected' : ''}>${escapeHtml(value)}</option>`)
+        .join('');
+      const nextClass = event.nextDate && daysUntilText(event.nextDate).includes('日前') ? 'warn' : 'info';
+      return `<div class="card" style="margin-top:16px;">
+        <div class="card-title"><span>決算イベント管理</span><span class="subtle">${escapeHtml(daysUntilText(event.nextDate))}</span></div>
+        <div class="signals"><div class="signal ${nextClass}"><strong>次回決算予定</strong><div style="margin-top:8px;">${escapeHtml(event.nextDate || '未設定')} / ステータス: ${escapeHtml(status)}</div></div></div>
+        <div class="form-grid" style="grid-template-columns: repeat(3, 1fr); margin-top:12px;">
+          <div class="field"><label>次回決算予定日</label><input type="date" value="${escapeHtml(event.nextDate || '')}" onchange="updateEarningsEvent('nextDate', this.value)"></div>
+          <div class="field"><label>前回決算日</label><input type="date" value="${escapeHtml(event.lastDate || '')}" onchange="updateEarningsEvent('lastDate', this.value)"></div>
+          <div class="field"><label>Status</label><select onchange="updateEarningsEvent('status', this.value)">${statusOptions}</select></div>
+        </div>
+        <div class="field" style="margin-top:12px;"><label>決算イベントメモ</label><textarea class="memo-input" style="min-height:95px;" placeholder="例: 決算前に受注、在庫、通期予想の進捗を確認" oninput="updateEarningsEvent('memo', this.value)">${escapeHtml(event.memo || '')}</textarea></div>
+      </div>`;
+    }
+
+    function renderAnalysisChecklistCard(stock) {
+      const checklist = stock.analysisChecklist || {};
+      const completed = CHECKLIST_ITEMS.filter((item) => checklist[item.key]?.checked).length;
+      const pct = Math.round((completed / CHECKLIST_ITEMS.length) * 100);
+      const rows = CHECKLIST_ITEMS.map((item) => {
+        const state = checklist[item.key] || {};
+        return `<div class="checklist-item">
+          <label class="check"><input type="checkbox" ${state.checked ? 'checked' : ''} onchange="updateChecklistItem('${escapeJsArg(item.key)}', 'checked', this.checked)">${escapeHtml(item.label)}</label>
+          <div class="field"><label>${escapeHtml(item.hint)}</label><input type="text" value="${escapeHtml(state.note || '')}" placeholder="確認結果メモ" oninput="updateChecklistItem('${escapeJsArg(item.key)}', 'note', this.value)"></div>
+        </div>`;
+      }).join('');
+      return `<div class="card" style="margin-top:16px;">
+        <div class="card-title"><span>分析チェックリスト</span><span class="subtle">${completed}/${CHECKLIST_ITEMS.length} / ${pct}%</span></div>
+        <div class="checklist-grid">${rows}</div>
+      </div>`;
+    }
+
+    function renderThesisMemoCard(stock) {
+      const memo = stock.thesisMemo || {};
+      return `<div class="card" style="margin-top:16px;">
+        <div class="card-title"><span>Bull / Bear / Watch</span><span class="subtle">${formatDateTime(memo.updatedAt)}</span></div>
+        <div class="ai-columns">
+          <div class="field"><label>Bull Case</label><textarea class="memo-input" style="min-height:130px;" placeholder="強気材料、上振れ要因、評価されそうな点" oninput="updateThesisMemo('bull', this.value)">${escapeHtml(memo.bull || '')}</textarea></div>
+          <div class="field"><label>Bear Case</label><textarea class="memo-input" style="min-height:130px;" placeholder="弱気材料、下振れ要因、懸念点" oninput="updateThesisMemo('bear', this.value)">${escapeHtml(memo.bear || '')}</textarea></div>
+        </div>
+        <div class="field" style="margin-top:12px;"><label>Watch</label><textarea class="memo-input" style="min-height:110px;" placeholder="次に見る指標、次決算で確認すること、株価トリガー" oninput="updateThesisMemo('watch', this.value)">${escapeHtml(memo.watch || '')}</textarea></div>
+      </div>`;
+    }
+
+    function importantSentences(text) {
+      const keywords = /売上|営業利益|経常利益|純利益|利益率|通期|予想|上方|下方|進捗|セグメント|受注|在庫|キャッシュ|CF|配当|自己株|リスク|懸念|強気|弱気|株価|カタリスト|為替|コスト/;
+      return String(text || '')
+        .split(/[。\n]/)
+        .map((line) => line.trim())
+        .filter((line) => line.length >= 10 && keywords.test(line))
+        .slice(0, 80);
+    }
+
+    function diffSentences(newText, oldText) {
+      const oldLines = new Set(importantSentences(oldText).map((line) => line.slice(0, 80)));
+      const newLines = importantSentences(newText);
+      return newLines.filter((line) => !oldLines.has(line.slice(0, 80))).slice(0, 6);
+    }
+
+    function renderIrDiffViewCard(stock) {
+      const notes = (stock.aiResponseNotes || []).slice(0, 2);
+      if (notes.length < 2) {
+        return `<div class="card" style="margin-top:16px;"><div class="card-title"><span>IR差分ビュー</span><span class="subtle">needs 2 notes</span></div><div class="empty"><strong>比較にはAI回答メモが2件必要です</strong>別々の決算やIRでChatGPT回答を保存すると、ここに差分が出ます。</div></div>`;
+      }
+      const [latest, previous] = notes;
+      const additions = diffSentences(latest.text, previous.text);
+      const removals = diffSentences(previous.text, latest.text);
+      const latestPreview = String(latest.text || '').replace(/\s+/g, ' ').slice(0, 520);
+      const previousPreview = String(previous.text || '').replace(/\s+/g, ' ').slice(0, 520);
+      return `<div class="card" style="margin-top:16px;">
+        <div class="card-title"><span>IR差分ビュー</span><span class="subtle">${formatDateTime(previous.createdAt)} → ${formatDateTime(latest.createdAt)}</span></div>
+        <div class="diff-grid">
+          <div class="signal"><strong>前回</strong><div class="subtle" style="margin-top:6px;">${escapeHtml(previous.item?.title || '')}</div><div style="margin-top:8px;">${escapeHtml(previousPreview)}${previous.text?.length > 520 ? '...' : ''}</div></div>
+          <div class="signal info"><strong>今回</strong><div class="subtle" style="margin-top:6px;">${escapeHtml(latest.item?.title || '')}</div><div style="margin-top:8px;">${escapeHtml(latestPreview)}${latest.text?.length > 520 ? '...' : ''}</div></div>
+        </div>
+        <div class="ai-columns" style="margin-top:12px;">
+          <div class="signal good"><strong>今回新しく出た論点候補</strong>${renderAiList(additions.length ? additions : ['明確な追加論点は抽出できませんでした。'])}</div>
+          <div class="signal warn"><strong>前回から薄れた論点候補</strong>${renderAiList(removals.length ? removals : ['明確に消えた論点は抽出できませんでした。'])}</div>
+        </div>
+        <div class="mini-note">差分は保存済みAI回答メモの文章からキーワードベースで抽出しています。最終確認はIR原文とChatGPT回答全文で行ってください。</div>
       </div>`;
     }
 
@@ -1452,6 +1755,35 @@
         const current = select.value;
         select.innerHTML = stockOptions;
         if (current && stocks.some((s) => String(s.id) === current)) select.value = current;
+      }
+      renderPromptControls();
+    }
+
+    function renderPromptControls() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect')?.value)) || stocks[0];
+      const irSelect = $('promptIrSelect');
+      const templateSelect = $('promptTemplateSelect');
+      if (!irSelect) return;
+      const currentIr = irSelect.value;
+      const items = getPromptIrItems(stock);
+      if (!stock || !items.length) {
+        irSelect.innerHTML = '<option value="">IRがありません</option>';
+        irSelect.value = '';
+      } else {
+        const preferred = items.find((item) => irItemKey(item) === String(currentIr || stock.selectedPromptIrId))
+          || items.find(isEarningsIr)
+          || items[0];
+        irSelect.innerHTML = items.map((item) => {
+          const mark = isEarningsIr(item) ? '★ ' : '';
+          const label = `${mark}${item.date || ''} ${item.category || 'IR'} ${item.title || ''}`.slice(0, 130);
+          return `<option value="${escapeHtml(irItemKey(item))}">${escapeHtml(label)}</option>`;
+        }).join('');
+        irSelect.value = irItemKey(preferred);
+        stock.selectedPromptIrId = irItemKey(preferred);
+      }
+      if (templateSelect) {
+        const value = stock?.promptTemplate || 'auto';
+        templateSelect.value = ['auto', 'earnings', 'material', 'forecast'].includes(value) ? value : 'auto';
       }
     }
 
@@ -1617,6 +1949,40 @@
       window.open(latestIr.url, '_blank', 'noopener,noreferrer');
     }
 
+    function openSelectedPromptIr() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      const item = getSelectedPromptIr(stock);
+      if (!item?.url) return showToast('開けるIR PDFがありません', 'warn');
+      window.open(item.url, '_blank', 'noopener,noreferrer');
+    }
+
+    function buildPromptEntry(stock, item, templateChoice = 'auto') {
+      const template = templateChoice === 'auto' ? inferPromptTemplate(item) : templateChoice;
+      const text = buildEarningsIrPrompt(stock, item, template);
+      return {
+        id: `prompt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        item: {
+          id: irItemKey(item),
+          date: item.date || '',
+          time: item.time || '',
+          title: item.title || '',
+          url: item.url || '',
+          category: item.category || ''
+        },
+        template,
+        text,
+        generatedAt: new Date().toISOString()
+      };
+    }
+
+    function savePromptEntry(stock, item, entry, templateChoice) {
+      stock.irPrompt = entry;
+      stock.irPromptHistory = [entry, ...(stock.irPromptHistory || []).filter((old) => old.text !== entry.text)].slice(0, 10);
+      stock.selectedPromptIrId = irItemKey(item);
+      stock.promptTemplate = templateChoice;
+      stock.irPromptError = null;
+    }
+
     async function copyLatestEarningsIrPrompt() {
       const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
       if (!stock) return showToast('銘柄を選択してください', 'warn');
@@ -1629,9 +1995,10 @@
           stock.irError = error.message;
         }
       }
-      const item = findLatestEarningsIr(stock);
+      renderPromptControls();
+      const item = getSelectedPromptIr(stock);
       if (!item?.url) {
-        stock.irPromptError = 'プロンプトに使える決算短信PDFが見つかりません。IR更新を実行してください。';
+        stock.irPromptError = 'プロンプトに使えるIR PDFが見つかりません。IR更新を実行してください。';
         saveState();
         renderAll();
         return showToast(stock.irPromptError, 'warn');
@@ -1643,19 +2010,10 @@
       btn.textContent = 'コピー中...';
 
       try {
-        const text = buildEarningsIrPrompt(stock, item);
-        stock.irPrompt = {
-          item: {
-            date: item.date || '',
-            time: item.time || '',
-            title: item.title || '',
-            url: item.url || ''
-          },
-          text,
-          generatedAt: new Date().toISOString()
-        };
-        stock.irPromptError = null;
-        await copyText(text);
+        const templateChoice = $('promptTemplateSelect')?.value || stock.promptTemplate || 'auto';
+        const entry = buildPromptEntry(stock, item, templateChoice);
+        savePromptEntry(stock, item, entry, templateChoice);
+        await copyText(entry.text);
         showToast(`${stock.code} の決算IRプロンプトをコピーしました`, 'success');
       } catch (error) {
         stock.irPromptError = error.message;
@@ -1666,6 +2024,232 @@
         saveState();
         renderAll();
       }
+    }
+
+    async function copyPromptHistory(stockId, promptId) {
+      const stock = stocks.find((s) => String(s.id) === String(stockId));
+      const entry = (stock?.irPromptHistory || []).find((item) => String(item.id) === String(promptId));
+      if (!entry?.text) return showToast('履歴プロンプトが見つかりません', 'warn');
+      try {
+        await copyText(entry.text);
+        stock.irPrompt = entry;
+        stock.selectedPromptIrId = entry.item?.id || stock.selectedPromptIrId;
+        stock.promptTemplate = entry.template || stock.promptTemplate || 'auto';
+        saveState();
+        renderAll();
+        showToast(`${stock.code} の履歴プロンプトをコピーしました`, 'success');
+      } catch (error) {
+        showToast(`コピーに失敗しました: ${error.message}`, 'error');
+      }
+    }
+
+    function currentAnalysisStock() {
+      return stocks.find((s) => String(s.id) === String($('analysisStockSelect')?.value)) || stocks[0] || null;
+    }
+
+    function saveAiResponseDraft(value) {
+      const stock = currentAnalysisStock();
+      if (!stock) return;
+      stock.aiResponseDraft = String(value || '');
+      saveState();
+    }
+
+    function updateEarningsEvent(field, value) {
+      const stock = currentAnalysisStock();
+      if (!stock) return;
+      stock.earningsEvent = stock.earningsEvent || {};
+      stock.earningsEvent[field] = String(value || '');
+      stock.earningsEvent.updatedAt = new Date().toISOString();
+      saveState();
+      if (field === 'nextDate' || field === 'status') renderAnalysis();
+    }
+
+    function updateChecklistItem(key, field, value) {
+      const stock = currentAnalysisStock();
+      if (!stock) return;
+      stock.analysisChecklist = stock.analysisChecklist || {};
+      stock.analysisChecklist[key] = stock.analysisChecklist[key] || { checked: false, note: '' };
+      stock.analysisChecklist[key][field] = field === 'checked' ? !!value : String(value || '');
+      stock.analysisChecklistUpdatedAt = new Date().toISOString();
+      saveState();
+      if (field === 'checked') renderAnalysis();
+    }
+
+    function updateThesisMemo(field, value) {
+      const stock = currentAnalysisStock();
+      if (!stock) return;
+      stock.thesisMemo = stock.thesisMemo || {};
+      stock.thesisMemo[field] = String(value || '');
+      stock.thesisMemo.updatedAt = new Date().toISOString();
+      saveState();
+    }
+
+    function saveAiResponseNote() {
+      const stock = currentAnalysisStock();
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      const text = String($('aiResponseNoteInput')?.value || '').trim();
+      if (!text) return showToast('保存するAI回答を貼り付けてください', 'warn');
+      const prompt = stock.irPrompt || null;
+      const selected = getSelectedPromptIr(stock);
+      const note = {
+        id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        text,
+        promptId: prompt?.id || '',
+        template: prompt?.template || (stock.promptTemplate === 'auto' ? inferPromptTemplate(selected) : stock.promptTemplate) || 'earnings',
+        item: prompt?.item || (selected ? {
+          id: irItemKey(selected),
+          date: selected.date || '',
+          time: selected.time || '',
+          title: selected.title || '',
+          url: selected.url || '',
+          category: selected.category || ''
+        } : null),
+        createdAt: new Date().toISOString()
+      };
+      stock.aiResponseNotes = [note, ...(stock.aiResponseNotes || [])].slice(0, 20);
+      stock.aiResponseDraft = '';
+      saveState();
+      renderAll();
+      showToast(`${stock.code} のAI回答メモを保存しました`, 'success');
+    }
+
+    async function copyAiResponseNote(stockId, noteId) {
+      const stock = stocks.find((s) => String(s.id) === String(stockId));
+      const note = (stock?.aiResponseNotes || []).find((item) => String(item.id) === String(noteId));
+      if (!note?.text) return showToast('AI回答メモが見つかりません', 'warn');
+      try {
+        await copyText(note.text);
+        showToast(`${stock.code} のAI回答メモをコピーしました`, 'success');
+      } catch (error) {
+        showToast(`コピーに失敗しました: ${error.message}`, 'error');
+      }
+    }
+
+    function deleteAiResponseNote(stockId, noteId) {
+      const stock = stocks.find((s) => String(s.id) === String(stockId));
+      if (!stock) return showToast('銘柄が見つかりません', 'warn');
+      stock.aiResponseNotes = (stock.aiResponseNotes || []).filter((item) => String(item.id) !== String(noteId));
+      saveState();
+      renderAll();
+      showToast(`${stock.code} のAI回答メモを削除しました`, 'success');
+    }
+
+    function clearAiResponseNotes() {
+      const stock = currentAnalysisStock();
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      if (!confirm(`${stock.code} のAI回答メモ履歴を削除しますか？`)) return;
+      stock.aiResponseNotes = [];
+      stock.aiResponseDraft = '';
+      saveState();
+      renderAll();
+      showToast(`${stock.code} のAI回答メモ履歴を削除しました`, 'success');
+    }
+
+    function sanitizeFilename(value) {
+      return String(value || 'prompt')
+        .replace(/[\\/:*?"<>|]/g, '-')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .slice(0, 120);
+    }
+
+    function downloadTextFile(filename, text, type = 'text/plain;charset=utf-8') {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function saveCurrentIrPromptMarkdown() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      const item = getSelectedPromptIr(stock);
+      if (!item?.url) return showToast('保存できるIR PDFがありません', 'warn');
+      const templateChoice = $('promptTemplateSelect')?.value || stock.promptTemplate || 'auto';
+      const template = templateChoice === 'auto' ? inferPromptTemplate(item) : templateChoice;
+      const entry = stock.irPrompt?.item?.id === irItemKey(item) && stock.irPrompt?.template === template && stock.irPrompt?.text
+        ? stock.irPrompt
+        : buildPromptEntry(stock, item, templateChoice);
+      if (entry !== stock.irPrompt) savePromptEntry(stock, item, entry, templateChoice);
+      const body = [
+        `# ${stock.code} ${companyNameForPrompt(stock)} IR分析プロンプト`,
+        '',
+        `- 作成日時: ${formatDateTime(entry.generatedAt)}`,
+        `- テンプレート: ${promptTemplateLabel(entry.template || 'earnings')}`,
+        `- IR: ${entry.item?.date || ''} ${entry.item?.title || ''}`,
+        `- PDF: ${entry.item?.url || ''}`,
+        '',
+        '```text',
+        entry.text,
+        '```'
+      ].join('\n');
+      const filename = sanitizeFilename(`${stock.code}-${entry.item?.date || new Date().toISOString().slice(0, 10)}-${promptTemplateLabel(entry.template || 'earnings')}.md`);
+      downloadTextFile(filename, body, 'text/markdown;charset=utf-8');
+      saveState();
+      renderAll();
+      showToast(`${stock.code} のプロンプトMarkdownを保存しました`, 'success');
+    }
+
+    function exportAiResponseNotesMarkdown() {
+      const stock = currentAnalysisStock();
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      const notes = stock.aiResponseNotes || [];
+      if (!notes.length) return showToast('保存できるAI回答メモがありません', 'warn');
+      const body = [
+        `# ${stock.code} ${companyNameForPrompt(stock)} AI分析メモ履歴`,
+        '',
+        `- 出力日時: ${formatDateTime(new Date().toISOString())}`,
+        '',
+        ...notes.flatMap((note, index) => [
+          `## ${index + 1}. ${formatDateTime(note.createdAt)} / ${promptTemplateLabel(note.template || 'earnings')}`,
+          '',
+          `- IR: ${note.item?.date || ''} ${note.item?.title || ''}`,
+          `- PDF: ${note.item?.url || ''}`,
+          '',
+          note.text || '',
+          ''
+        ])
+      ].join('\n');
+      const filename = sanitizeFilename(`${stock.code}-ai-response-notes-${new Date().toISOString().slice(0, 10)}.md`);
+      downloadTextFile(filename, body, 'text/markdown;charset=utf-8');
+      showToast(`${stock.code} のAI回答メモ履歴を保存しました`, 'success');
+    }
+
+    function clearSelectedPromptHistory() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      if (!confirm(`${stock.code} のプロンプト履歴を削除しますか？`)) return;
+      stock.irPromptHistory = [];
+      stock.irPrompt = null;
+      stock.irPromptError = null;
+      saveState();
+      renderAll();
+      showToast(`${stock.code} のプロンプト履歴を削除しました`, 'success');
+    }
+
+    function handlePromptIrChange() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      if (stock) {
+        stock.selectedPromptIrId = $('promptIrSelect').value || null;
+        stock.irPrompt = null;
+        stock.irPromptError = null;
+        saveState();
+      }
+      renderAnalysis();
+    }
+
+    function handlePromptTemplateChange() {
+      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+      if (stock) {
+        stock.promptTemplate = $('promptTemplateSelect').value || 'auto';
+        stock.irPrompt = null;
+        stock.irPromptError = null;
+        saveState();
+      }
+      renderAnalysis();
     }
 
     async function runSelectedAiAnalysis() {
@@ -1728,13 +2312,7 @@
 
     function exportData() {
       const payload = { version: 1, exportedAt: new Date().toISOString(), stocks, alertLog };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `kabu-lab-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadTextFile(`kabu-lab-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(payload, null, 2), 'application/json');
     }
 
     function importData(file) {
@@ -1772,7 +2350,7 @@
           <div class="signals">${renderFundamentalSignals(stock)}${latestIr ? renderIrSignal('最新IR', latestIr) : '<div class="signal warn">直近IRはまだ取得できていません。</div>'}</div>
         </div>`;
       const technicalHtml = `<div class="card"><div class="card-title"><span>テクニカル分析</span><span class="subtle">${technical ? technical.trend + ' / Score ' + technical.score : '未取得'}</span></div>${technical ? renderTechnicalBlock(stock, technical) : `<div class="empty"><strong>チャートデータ不足</strong>「分析更新」を実行して価格データを揃えてください。</div>`}</div>`;
-      container.innerHTML = `<div class="grid-2">${fundamentalsHtml}${technicalHtml}</div>${renderIrPromptCard(stock)}${renderAiAnalysisCard(stock)}`;
+      container.innerHTML = `<div class="grid-2">${fundamentalsHtml}${technicalHtml}</div>${renderEarningsEventCard(stock)}${renderAnalysisChecklistCard(stock)}${renderThesisMemoCard(stock)}${renderIrPromptCard(stock)}${renderAiResponseNotesCard(stock)}${renderIrDiffViewCard(stock)}${renderAiAnalysisCard(stock)}`;
     }
 
     function bindEvents() {
@@ -1788,10 +2366,15 @@
       $('clearIrBtn').addEventListener('click', renderIr);
       $('irStockFilter').addEventListener('change', renderIr);
       $('irCategoryFilter').addEventListener('change', renderIr);
-      $('analysisStockSelect').addEventListener('change', renderAnalysis);
+      $('analysisStockSelect').addEventListener('change', () => { renderPromptControls(); renderAnalysis(); });
       $('refreshSelectedAnalysisBtn').addEventListener('click', refreshSelectedAnalysis);
       $('openLatestIrBtn').addEventListener('click', openLatestIr);
+      $('promptIrSelect').addEventListener('change', handlePromptIrChange);
+      $('promptTemplateSelect').addEventListener('change', handlePromptTemplateChange);
       $('copyIrPromptBtn').addEventListener('click', copyLatestEarningsIrPrompt);
+      $('openPromptIrBtn').addEventListener('click', openSelectedPromptIr);
+      $('saveIrPromptBtn').addEventListener('click', saveCurrentIrPromptMarkdown);
+      $('clearPromptHistoryBtn').addEventListener('click', clearSelectedPromptHistory);
       $('runAiAnalysisBtn').addEventListener('click', runSelectedAiAnalysis);
       $('copyAiMemoBtn').addEventListener('click', copyAiMemo);
       $('clearAiAnalysisBtn').addEventListener('click', clearSelectedAiAnalysis);

@@ -56,12 +56,11 @@ try {
 
 Write-Host "kabu-proxy listening on $prefix (Ctrl+C to stop)"
 
-try {
-  while ($listener.IsListening) {
-    $ctx = $listener.GetContext()
-    $req = $ctx.Request
-    $res = $ctx.Response
+function Handle-ProxyRequest([System.Net.HttpListenerContext]$ctx) {
+  $req = $ctx.Request
+  $res = $ctx.Response
 
+  try {
     # CORS preflight
     if ($req.HttpMethod -eq "OPTIONS") {
       $res.StatusCode = 204
@@ -69,33 +68,91 @@ try {
       $res.Headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
       $res.Headers["Access-Control-Allow-Headers"] = "Content-Type"
       $res.OutputStream.Close()
-      continue
+      return
     }
 
     if ($req.HttpMethod -ne "GET") {
       BadRequest $res "method not allowed"
-      continue
+      return
     }
 
     $path = $req.Url.AbsolutePath
 
     if ($path -eq "/health") {
       Write-JsonResponse $res 200 ("{""ok"":true,""time"":""$([DateTime]::Now.ToString('o'))""}")
-      continue
+      return
     }
 
     $q = $req.QueryString
     $symbol = $q["symbol"]
 
-    if ($path -eq "/yahoo/chart") {
+    if ($path -eq "/yahoo/chart-batch") {
+      $symbolsParam = $q["symbols"]
+      if ([string]::IsNullOrWhiteSpace($symbolsParam)) {
+        BadRequest $res "missing symbols"
+        return
+      }
+      if ($symbolsParam.Length -gt 2048 -or $symbolsParam -notmatch '^[A-Za-z0-9\.\-\^=,]+$') {
+        BadRequest $res "invalid symbols"
+        return
+      }
+
+      $interval = $q["interval"]; if ([string]::IsNullOrWhiteSpace($interval)) { $interval = "1d" }
+      $range = $q["range"]; if ([string]::IsNullOrWhiteSpace($range)) { $range = "1y" }
+      $symbols = $symbolsParam.Split(",", [System.StringSplitOptions]::RemoveEmptyEntries) | Select-Object -First 20
+      $requests = @()
+
+      foreach ($sym in $symbols) {
+        if ($sym.Length -gt 32 -or $sym -notmatch '^[A-Za-z0-9\.\-\^=]+$') {
+          $requests += [pscustomobject]@{ Symbol = $sym; Url = $null; Task = $null; Error = "invalid symbol" }
+          continue
+        }
+        $symbolPath = [System.Uri]::EscapeDataString($sym)
+        $chartUrl = "https://query1.finance.yahoo.com/v8/finance/chart/$($symbolPath)?interval=$interval&range=$range"
+        $requests += [pscustomobject]@{ Symbol = $sym; Url = $chartUrl; Task = $http.GetAsync($chartUrl); Error = $null }
+      }
+
+      $tasks = @($requests | Where-Object { $_.Task -ne $null } | ForEach-Object { $_.Task })
+      if ($tasks.Count -gt 0) {
+        try { [System.Threading.Tasks.Task]::WaitAll($tasks) } catch {}
+      }
+
+      $items = @()
+      foreach ($item in $requests) {
+        if ($item.Error) {
+          $items += [pscustomobject]@{ symbol = $item.Symbol; status = 400; body = $null; error = $item.Error }
+          continue
+        }
+
+        try {
+          $resp = $item.Task.Result
+          $body = $resp.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+          $status = [int]$resp.StatusCode
+          if ($resp.IsSuccessStatusCode) {
+            $items += [pscustomobject]@{ symbol = $item.Symbol; status = 200; body = $body; error = $null }
+          } else {
+            $snippet = $body
+            if ($snippet -and $snippet.Length -gt 300) { $snippet = $snippet.Substring(0, 300) }
+            $snippet = ($snippet -replace "\\s+", " ").Trim()
+            $items += [pscustomobject]@{ symbol = $item.Symbol; status = $status; body = $null; error = $snippet }
+          }
+        } catch {
+          $items += [pscustomobject]@{ symbol = $item.Symbol; status = 502; body = $null; error = $_.Exception.Message }
+        }
+      }
+
+      $payload = ([pscustomobject]@{ result = $items } | ConvertTo-Json -Depth 5 -Compress)
+      Write-JsonResponse $res 200 $payload
+      return
+    } elseif ($path -eq "/yahoo/chart") {
       if ([string]::IsNullOrWhiteSpace($symbol)) {
         BadRequest $res "missing symbol"
-        continue
+        return
       }
       # Chart is a single-symbol endpoint.
       if ($symbol.Length -gt 32 -or $symbol -notmatch '^[A-Za-z0-9\.\-\^=]+$') {
         BadRequest $res "invalid symbol"
-        continue
+        return
       }
       $symbolPath = [System.Uri]::EscapeDataString($symbol)
       $interval = $q["interval"]; if ([string]::IsNullOrWhiteSpace($interval)) { $interval = "1d" }
@@ -104,18 +161,18 @@ try {
     } elseif ($path -eq "/yahoo/quote") {
       if ([string]::IsNullOrWhiteSpace($symbol)) {
         BadRequest $res "missing symbol"
-        continue
+        return
       }
       # Quote supports comma-separated batches. Keep the allowed characters narrow.
       if ($symbol.Length -gt 2048 -or $symbol -notmatch '^[A-Za-z0-9\.\-\^=,]+$') {
         BadRequest $res "invalid symbol"
-        continue
+        return
       }
       $symbolQuery = [System.Uri]::EscapeDataString($symbol)
       $url = "https://query2.finance.yahoo.com/v7/finance/quote?symbols=$symbolQuery"
     } else {
       BadRequest $res "unknown path"
-      continue
+      return
     }
 
     try {
@@ -125,7 +182,7 @@ try {
 
       if ($resp.IsSuccessStatusCode) {
         Write-JsonResponse $res 200 $body
-        continue
+        return
       }
 
       $snippet = $body
@@ -139,6 +196,20 @@ try {
       $payload = "{""error"":""upstream failed"",""detail"":""$msg"",""url"":""$url""}"
       Write-JsonResponse $res 502 $payload
     }
+  } catch {
+    try {
+      $msg = $_.Exception.Message
+      Write-JsonResponse $res 500 ("{""error"":""proxy failed"",""detail"":""$msg""}")
+    } catch {
+      try { $res.OutputStream.Close() } catch {}
+    }
+  }
+}
+
+try {
+  while ($listener.IsListening) {
+    $ctx = $listener.GetContext()
+    Handle-ProxyRequest $ctx
   }
 } finally {
   try { $listener.Stop() } catch {}
