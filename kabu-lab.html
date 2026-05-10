@@ -78,7 +78,7 @@
     .check { display: inline-flex; align-items: center; gap: 8px; color: var(--sub); font-size: 13px; user-select: none; }
     .check input { width: auto; }
     .actions { display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
-    .btn { border: 0; border-radius: 14px; padding: 11px 15px; font-weight: 900; color: var(--ink); background: #eadcc6; transition: .18s; white-space: nowrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 14px; padding: 11px 15px; font-weight: 900; color: var(--ink); background: #eadcc6; transition: .18s; white-space: nowrap; text-decoration: none; }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(23,32,51,.12); }
     .btn:disabled { opacity: .55; cursor: wait; transform: none; box-shadow: none; }
     .primary { color: #fff; background: linear-gradient(135deg, var(--accent), #8f351f); }
@@ -138,6 +138,36 @@
     .memo-input { min-height: 180px; resize: vertical; font: 13px/1.7 "Yu Gothic", "Meiryo", sans-serif; }
     .history-list { display: grid; gap: 9px; margin-top: 10px; }
     .history-item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.52); border: 1px solid rgba(23,32,51,.1); }
+    .dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .dashboard-card { border: 1px solid rgba(23,32,51,.12); border-radius: 24px; padding: 16px; background: linear-gradient(145deg, rgba(255,255,255,.72), rgba(250,245,235,.58)); box-shadow: 0 16px 40px rgba(23,32,51,.07); }
+    .dashboard-head { display: grid; grid-template-columns: 1fr minmax(130px, 170px); gap: 12px; align-items: start; margin-bottom: 12px; }
+    .dashboard-title { font-weight: 900; font-size: 18px; letter-spacing: -.04em; }
+    .dashboard-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+    .dashboard-kpi { border-radius: 14px; padding: 10px; background: rgba(255,255,255,.55); border: 1px solid rgba(23,32,51,.08); }
+    .dashboard-kpi span { display: block; color: var(--muted); font: 900 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .dashboard-kpi strong { display: block; margin-top: 7px; color: var(--ink); font-size: 13px; line-height: 1.35; }
+    .dashboard-briefs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+    .dashboard-brief { min-width: 0; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 14px; padding: 8px 10px; background: rgba(255,255,255,.46); }
+    .dashboard-brief.good { border-left-color: var(--green); background: rgba(22,122,74,.07); }
+    .dashboard-brief.warn { border-left-color: var(--gold); background: rgba(201,139,33,.09); }
+    .dashboard-brief.bad { border-left-color: var(--red); background: rgba(184,51,44,.07); }
+    .dashboard-brief.info { border-left-color: var(--blue); background: rgba(36,92,166,.07); }
+    .dashboard-brief span { display: block; color: var(--muted); font: 900 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .dashboard-brief strong { display: block; margin-top: 5px; color: var(--ink); font-size: 13px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dashboard-brief em { display: block; margin-top: 4px; color: var(--sub); font-style: normal; font-size: 11px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dashboard-memo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+    .dashboard-memo div { border-radius: 14px; padding: 10px; background: rgba(255,255,255,.42); border: 1px solid rgba(23,32,51,.08); color: var(--sub); font-size: 12px; line-height: 1.55; }
+    .dashboard-memo strong { display: block; color: var(--ink); margin-bottom: 5px; }
+    .news-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .news-section { min-width: 0; }
+    .news-list { display: grid; gap: 9px; }
+    .news-item { border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 14px; padding: 11px 12px; background: rgba(255,255,255,.48); line-height: 1.55; }
+    .news-item.official { border-left-color: var(--green); }
+    .news-item.reporting { border-left-color: var(--blue); }
+    .news-item.market { border-left-color: var(--gold); }
+    .news-item.social { border-left-color: var(--red); }
+    .news-title { color: var(--ink); font-weight: 900; }
+    .news-meta { margin-top: 6px; color: var(--muted); font: 900 11px/1.45 var(--mono); }
     .checklist-grid { display: grid; gap: 10px; }
     .checklist-item { display: grid; grid-template-columns: minmax(180px, .55fr) 1fr; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.52); border: 1px solid rgba(23,32,51,.1); }
     .diff-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -147,8 +177,8 @@
     .toast.error { background: var(--red); }
     .toast.success { background: var(--green); }
     .toast.warn { background: var(--gold); color: var(--ink); }
-    @media (max-width: 1060px) { .hero, .controls, .grid-2, .ai-columns, .diff-grid { grid-template-columns: 1fr; } .form-grid, .metrics, .analysis-grid { grid-template-columns: repeat(2, 1fr); } .actions { justify-content: flex-start; } }
-    @media (max-width: 720px) { .shell { width: min(100% - 22px, 1380px); padding-top: 14px; } .hero-main, .hero-side, .card { border-radius: 20px; padding: 18px; } .form-grid, .metrics, .analysis-grid, .checklist-item { grid-template-columns: 1fr; } .table-wrap { overflow-x: auto; } table { min-width: 980px; } .log-item { grid-template-columns: 1fr; } .proxy-row { flex-direction: column; } }
+    @media (max-width: 1060px) { .hero, .controls, .grid-2, .ai-columns, .diff-grid, .dashboard-grid, .news-grid { grid-template-columns: 1fr; } .form-grid, .metrics, .analysis-grid { grid-template-columns: repeat(2, 1fr); } .actions { justify-content: flex-start; } }
+    @media (max-width: 720px) { .shell { width: min(100% - 22px, 1380px); padding-top: 14px; } .hero-main, .hero-side, .card { border-radius: 20px; padding: 18px; } .form-grid, .metrics, .analysis-grid, .checklist-item, .dashboard-head, .dashboard-kpis, .dashboard-briefs, .dashboard-memo { grid-template-columns: 1fr; } .table-wrap { overflow-x: auto; } table { min-width: 980px; } .log-item { grid-template-columns: 1fr; } .proxy-row { flex-direction: column; } }
   </style>
 </head>
 <body>
@@ -209,6 +239,7 @@
       <button class="tab active" data-tab="portfolio">銘柄ボード</button>
       <button class="tab" data-tab="ir">IR自動取得</button>
       <button class="tab" data-tab="analysis">決算/テクニカル分析</button>
+      <button class="tab" data-tab="news">朝ニュース</button>
       <button class="tab" data-tab="alerts">通知履歴</button>
       <button class="tab" data-tab="settings">使い方</button>
     </nav>
@@ -254,6 +285,17 @@
       </div>
       <div id="analysisContainer"></div>
     </section>
+    <section class="panel" id="panel-news">
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title"><span>朝ニュースまとめ</span><span class="subtle" id="newsFetchedAt">未生成</span></div>
+        <div class="actions" style="justify-content:flex-start;">
+          <button class="btn primary" id="refreshNewsBtn">ニュース生成</button>
+          <button class="btn ghost" id="copyNewsBtn">JSONコピー</button>
+        </div>
+        <div class="mini-note">Xは必ずSNS反応・未確認情報として扱い、単独で事実扱いしません。</div>
+      </div>
+      <div id="newsContainer"></div>
+    </section>
     <section class="panel" id="panel-alerts">
       <div class="card" style="margin-bottom:14px;"><div class="card-title"><span>通知履歴</span><button class="btn danger small" id="clearLogBtn">履歴削除</button></div><div class="subtle">新着IRを記録します。</div></div>
       <div id="alertLogContainer"></div>
@@ -269,7 +311,7 @@
       </div>
       <div class="grid-2">
         <div class="card"><div class="card-title">使い方</div><div class="signals"><div class="signal good">1. start-kabu-lab.bat を起動すると、ローカルプロキシとこの画面が開きます。</div><div class="signal good">2. 銘柄を追加し、「価格/分析更新」で株価・テクニカル指標を取得します。</div><div class="signal good">3. 日本株は「IR一括更新」でTDnetの直近31日分を銘柄コード別に取得できます。</div></div></div>
-        <div class="card"><div class="card-title">データについて</div><div class="signals"><div class="signal">価格、PER/PBR/EPSなどはYahoo Finance系エンドポイントから取得します。</div><div class="signal">IRはTDnet公開ページの直近31日分を対象にします。初期版ではXBRL全文解析ではなく、決算関連IRの抽出と基本指標分析を行います。</div><div class="signal bad">投資判断の最終確認は、必ず各IR PDFや公式情報で行ってください。</div></div></div>
+        <div class="card"><div class="card-title">データについて</div><div class="signals"><div class="signal">価格、PER/PBR/EPS、決算発表予定日はYahoo Finance系エンドポイントから取得します。</div><div class="signal">IRはTDnet公開ページの直近31日分を対象にします。初期版ではXBRL全文解析ではなく、決算関連IRの抽出と基本指標分析を行います。</div><div class="signal bad">投資判断の最終確認は、必ず各IR PDFや公式情報で行ってください。</div></div></div>
       </div>
     </section>
   </div>
@@ -278,6 +320,7 @@
     const STORAGE_STOCKS = 'kabu_lab_stocks_v1';
     const STORAGE_LOG = 'kabu_lab_alert_log_v1';
     const STORAGE_PROXY = 'kabu_lab_proxy_v7';
+    const STORAGE_PORTFOLIO_FILTER = 'kabu_lab_portfolio_filter_v1';
     const IR_DAYS = 31;
     const CHECKLIST_ITEMS = [
       { key: 'sales', label: '売上高', hint: 'YoY/QoQ、数量・単価・為替の影響' },
@@ -291,9 +334,15 @@
       { key: 'risks', label: 'リスク', hint: 'コスト増、競争、為替、規制、需要' },
       { key: 'nextWatch', label: '次回確認点', hint: '次決算まで追うKPIとイベント' }
     ];
+    const INVESTMENT_STATUSES = ['監視中', '打診買い', '保有中', '利確検討', '撤退候補', '休眠'];
     const $ = (id) => document.getElementById(id);
     let stocks = loadJson(STORAGE_STOCKS, []);
     let alertLog = loadJson(STORAGE_LOG, []);
+    let portfolioFilter = localStorage.getItem(STORAGE_PORTFOLIO_FILTER) || 'all';
+    let refreshAllRunning = false;
+    let refreshIrRunning = false;
+    let morningNews = null;
+    let morningNewsLoading = false;
 
     function loadJson(key, fallback) {
       try {
@@ -344,6 +393,9 @@
       stock.code = normalizeCode(stock.code || stock.symbol || '', stock.market);
       stock.name = stock.name || stock.code;
       stock.autoIr = stock.market === 'JP' ? stock.autoIr !== false : false;
+      stock.investmentStatus = INVESTMENT_STATUSES.includes(stock.investmentStatus) ? stock.investmentStatus : '監視中';
+      stock.isHolding = !!stock.isHolding;
+      stock.isFavorite = !!stock.isFavorite;
       stock.irItems = Array.isArray(stock.irItems) ? stock.irItems.map(normalizeIrItem) : [];
       stock.chartPoints = Array.isArray(stock.chartPoints) ? stock.chartPoints : [];
       stock.fundamentals = stock.fundamentals || {};
@@ -360,6 +412,15 @@
       stock.earningsEvent = stock.earningsEvent && typeof stock.earningsEvent === 'object' ? stock.earningsEvent : {};
       stock.earningsEvent.status = stock.earningsEvent.status || '未確認';
       stock.earningsEvent.nextDate = stock.earningsEvent.nextDate || '';
+      stock.earningsEvent.nextDateSource = stock.earningsEvent.nextDateSource || (stock.earningsEvent.nextDate ? 'manual' : '');
+      stock.earningsEvent.autoNextDate = stock.earningsEvent.autoNextDate || '';
+      stock.earningsEvent.autoNextDateSource = stock.earningsEvent.autoNextDateSource || '';
+      stock.earningsEvent.autoNextDateFetchedAt = stock.earningsEvent.autoNextDateFetchedAt || '';
+      stock.earningsEvent.autoNextDateConfidence = stock.earningsEvent.autoNextDateConfidence || '';
+      stock.earningsEvent.autoNextDateSourceUrl = stock.earningsEvent.autoNextDateSourceUrl || '';
+      stock.earningsEvent.latestKnownDate = stock.earningsEvent.latestKnownDate || '';
+      stock.earningsEvent.jpxEarningsFetchedAt = stock.earningsEvent.jpxEarningsFetchedAt || '';
+      stock.earningsEvent.jpxEarningsError = stock.earningsEvent.jpxEarningsError || '';
       stock.earningsEvent.lastDate = stock.earningsEvent.lastDate || '';
       stock.earningsEvent.memo = stock.earningsEvent.memo || '';
       stock.analysisChecklist = stock.analysisChecklist && typeof stock.analysisChecklist === 'object' ? stock.analysisChecklist : {};
@@ -383,6 +444,20 @@
 
     function yahooSymbol(stock) {
       return stock.market === 'JP' ? `${stock.code}.T` : stock.code;
+    }
+
+    function yahooForumUrl(stock) {
+      return stock?.market === 'JP' ? `https://finance.yahoo.co.jp/quote/${encodeURIComponent(yahooSymbol(stock))}/forum` : '';
+    }
+
+    function kabutanUrl(stock) {
+      return stock?.market === 'JP' ? `https://kabutan.jp/stock/?code=${encodeURIComponent(stock.code)}` : '';
+    }
+
+    function renderExternalStockLinks(stock) {
+      if (stock?.market !== 'JP') return '';
+      const label = escapeHtml(stock.name || stock.code);
+      return `<a class="btn small ghost" href="${escapeHtml(yahooForumUrl(stock))}" target="_blank" rel="noopener noreferrer" aria-label="${label}のYahoo掲示板を開く">Yahoo掲示板</a><a class="btn small ghost" href="${escapeHtml(kabutanUrl(stock))}" target="_blank" rel="noopener noreferrer" aria-label="${label}の株探ページを開く">株探</a>`;
     }
 
     function formatPrice(value, stock) {
@@ -513,7 +588,22 @@
       stock.currency = q.currency || stock.currency || (stock.market === 'JP' ? 'JPY' : 'USD');
       stock.marketState = q.marketState || stock.marketState || 'CLOSED';
       stock.quoteFetchedAt = new Date().toISOString();
-      if ((!stock.name || stock.name === stock.code) && (q.shortName || q.longName)) stock.name = q.shortName || q.longName;
+      if (isPlaceholderName(stock) && (q.longName || q.shortName || q.displayName)) {
+        stock.name = cleanCompanyName(q.longName || q.shortName || q.displayName);
+      }
+      const earningsDate = q.earningsDate
+        || (q.earningsTimestamp ? new Date(Number(q.earningsTimestamp) * 1000).toISOString().slice(0, 10) : null)
+        || (q.earningsTimestampStart ? new Date(Number(q.earningsTimestampStart) * 1000).toISOString().slice(0, 10) : null);
+      if (earningsDate) {
+        stock.earningsEvent = stock.earningsEvent || {};
+        stock.earningsEvent.autoNextDate = earningsDate;
+        stock.earningsEvent.autoNextDateSource = q.earningsDateSource || q.source || 'YAHOO_QUOTE';
+        stock.earningsEvent.autoNextDateFetchedAt = stock.quoteFetchedAt;
+        if (!stock.earningsEvent.nextDate || stock.earningsEvent.nextDateSource === 'auto') {
+          stock.earningsEvent.nextDate = earningsDate;
+          stock.earningsEvent.nextDateSource = 'auto';
+        }
+      }
       stock.fundamentals = {
         ...stock.fundamentals,
         per: q.trailingPE ?? q.forwardPE ?? stock.fundamentals?.per ?? null,
@@ -525,11 +615,37 @@
       };
     }
 
+    async function fetchJpxEarningsDate(stock) {
+      if (stock.market !== 'JP') return false;
+      const data = await apiGet(`/jpx/earnings?code=${encodeURIComponent(stock.code)}`, 52000);
+      stock.earningsEvent = stock.earningsEvent || {};
+      stock.earningsEvent.jpxEarningsFetchedAt = data?.fetchedAt || new Date().toISOString();
+      stock.earningsEvent.jpxEarningsError = '';
+      if (data?.latestKnownDate) stock.earningsEvent.latestKnownDate = data.latestKnownDate;
+      if (!data?.date) return false;
+
+      stock.earningsEvent.autoNextDate = data.date;
+      stock.earningsEvent.autoNextDateSource = data.dateSource || 'JPX_OFFICIAL_EXCEL';
+      stock.earningsEvent.autoNextDateFetchedAt = data.fetchedAt || new Date().toISOString();
+      stock.earningsEvent.autoNextDateConfidence = data.confidence || 'official';
+      stock.earningsEvent.autoNextDateSourceUrl = data.sourceUrl || data.sourcePage || '';
+      if (!stock.earningsEvent.nextDate || stock.earningsEvent.nextDateSource === 'auto') {
+        stock.earningsEvent.nextDate = data.date;
+        stock.earningsEvent.nextDateSource = 'auto';
+      }
+      if (isPlaceholderName(stock) && data.companyName) {
+        stock.name = cleanCompanyName(data.companyName);
+      }
+      return true;
+    }
+
     async function fetchCompanyName(stock) {
       if (!isPlaceholderName(stock)) return false;
       const data = await apiGet(`/name?code=${encodeURIComponent(stock.code)}&market=${encodeURIComponent(stock.market)}`, 20000);
       if (!data?.name) return false;
-      stock.name = cleanCompanyName(data.name);
+      const name = cleanCompanyName(data.name);
+      if (!name || name === stock.code || name === yahooSymbol(stock)) return false;
+      stock.name = name;
       return true;
     }
 
@@ -605,6 +721,15 @@
       } catch (error) {
         errors.push(`quote: ${error.message}`);
       }
+      if (stock.market === 'JP') {
+        try {
+          await fetchJpxEarningsDate(stock);
+        } catch (error) {
+          stock.earningsEvent = stock.earningsEvent || {};
+          stock.earningsEvent.jpxEarningsError = error.message;
+          stock.earningsEvent.jpxEarningsFetchedAt = new Date().toISOString();
+        }
+      }
       try {
         await fetchChart(stock);
         chartOk = true;
@@ -631,22 +756,31 @@
 
     async function refreshAll(options = {}) {
       if (!stocks.length) return showToast('銘柄がありません', 'warn');
+      if (refreshAllRunning) {
+        if (!options.silent) showToast('価格/分析更新は実行中です', 'warn');
+        return;
+      }
+      refreshAllRunning = true;
       const btn = $('refreshAllBtn');
       const old = btn.textContent;
       btn.disabled = true;
       let failed = 0;
-      for (let i = 0; i < stocks.length; i++) {
-        const stock = stocks[i];
-        btn.textContent = `更新中 ${i + 1}/${stocks.length}`;
-        setLastRun(`${stock.code} 価格/分析更新中`);
-        await refreshStock(stock, { withIr: false, silent: options.silent });
-        if (stock.error) failed++;
-        renderAll();
+      try {
+        for (let i = 0; i < stocks.length; i++) {
+          const stock = stocks[i];
+          btn.textContent = `更新中 ${i + 1}/${stocks.length}`;
+          setLastRun(`${stock.code} 価格/分析更新中`);
+          await refreshStock(stock, { withIr: false, silent: options.silent });
+          if (stock.error) failed++;
+          renderAll();
+        }
+        setLastRun(`価格/分析更新完了 ${stocks.length - failed}/${stocks.length}`);
+        showToast(failed ? `更新完了: ${stocks.length - failed}/${stocks.length}件成功` : '価格/分析を更新しました', failed ? 'warn' : 'success');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = old;
+        refreshAllRunning = false;
       }
-      btn.disabled = false;
-      btn.textContent = old;
-      setLastRun(`価格/分析更新完了 ${stocks.length - failed}/${stocks.length}`);
-      showToast(failed ? `更新完了: ${stocks.length - failed}/${stocks.length}件成功` : '価格/分析を更新しました', failed ? 'warn' : 'success');
     }
 
     async function refreshAllIr(options = {}) {
@@ -654,22 +788,31 @@
       if (!targets.length) {
         return showToast(options.silent ? 'IR自動取得がONの日本株がありません' : '日本株がありません', 'warn');
       }
+      if (refreshIrRunning) {
+        if (!options.silent) showToast('IR更新は実行中です', 'warn');
+        return;
+      }
+      refreshIrRunning = true;
       const btn = $('refreshIrBtn');
       const old = btn.textContent;
       btn.disabled = true;
       let failed = 0;
-      for (let i = 0; i < targets.length; i++) {
-        const stock = targets[i];
-        btn.textContent = `IR ${i + 1}/${targets.length}`;
-        setLastRun(`${stock.code} IR取得中`);
-        try { await fetchIr(stock, options); } catch (error) { stock.irError = error.message; failed++; }
-        saveState();
-        renderAll();
+      try {
+        for (let i = 0; i < targets.length; i++) {
+          const stock = targets[i];
+          btn.textContent = `IR ${i + 1}/${targets.length}`;
+          setLastRun(`${stock.code} IR取得中`);
+          try { await fetchIr(stock, options); } catch (error) { stock.irError = error.message; failed++; }
+          saveState();
+          renderAll();
+        }
+        setLastRun(`IR更新完了 ${targets.length - failed}/${targets.length}`);
+        showToast(failed ? `IR更新完了: ${targets.length - failed}/${targets.length}件成功` : 'IRを更新しました', failed ? 'warn' : 'success');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = old;
+        refreshIrRunning = false;
       }
-      btn.disabled = false;
-      btn.textContent = old;
-      setLastRun(`IR更新完了 ${targets.length - failed}/${targets.length}`);
-      showToast(failed ? `IR更新完了: ${targets.length - failed}/${targets.length}件成功` : 'IRを更新しました', failed ? 'warn' : 'success');
     }
 
     async function runDiagnostics() {
@@ -706,6 +849,139 @@
         }
       }
       alert(lines.join('\n'));
+    }
+
+    function morningNewsCodes() {
+      return [...new Set(stocks.filter((stock) => stock.market === 'JP' && /^\d{4}$/.test(stock.code)).map((stock) => stock.code))];
+    }
+
+    function morningNewsTerms() {
+      const terms = [];
+      for (const stock of stocks) {
+        if (stock.market !== 'JP') continue;
+        if (stock.name && stock.name !== stock.code) terms.push(stock.name);
+        const watch = String(stock.thesisMemo?.watch || '').split(/[、,\s]+/).filter(Boolean).slice(0, 4);
+        terms.push(...watch);
+      }
+      return [...new Set(terms)].slice(0, 80);
+    }
+
+    function morningNewsLargeCaps() {
+      return [...new Set(stocks
+        .filter((stock) => stock.market === 'JP' && Number(stock.fundamentals?.marketCap || 0) >= 1_000_000_000_000)
+        .map((stock) => stock.code))];
+    }
+
+    function morningNewsPath() {
+      const params = new URLSearchParams();
+      const codes = morningNewsCodes();
+      const terms = morningNewsTerms();
+      const largeCaps = morningNewsLargeCaps();
+      if (codes.length) params.set('codes', codes.join(','));
+      if (terms.length) params.set('terms', terms.join(','));
+      if (largeCaps.length) params.set('largeCaps', largeCaps.join(','));
+      params.set('days', '3');
+      return `/news/morning?${params.toString()}`;
+    }
+
+    async function refreshMorningNews() {
+      if (morningNewsLoading) return showToast('朝ニュース生成は実行中です', 'warn');
+      morningNewsLoading = true;
+      const btn = $('refreshNewsBtn');
+      const old = btn?.textContent || '';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '生成中...';
+      }
+      renderMorningNews();
+      try {
+        morningNews = await apiGet(morningNewsPath(), 90000);
+        if ($('newsFetchedAt')) $('newsFetchedAt').textContent = formatDateTime(morningNews.fetchedAt);
+        renderMorningNews();
+        showToast('朝ニュースまとめを生成しました', 'success');
+      } catch (error) {
+        morningNews = { ok: false, error: error.message };
+        renderMorningNews();
+        showToast(`朝ニュース生成に失敗しました: ${error.message}`, 'error');
+      } finally {
+        morningNewsLoading = false;
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = old;
+        }
+      }
+    }
+
+    async function copyMorningNews() {
+      if (!morningNews?.ok) return showToast('コピーできる朝ニュースがありません', 'warn');
+      try {
+        await copyText(JSON.stringify(morningNews.finalOutput || morningNews, null, 2));
+        showToast('朝ニュースのJSONをコピーしました', 'success');
+      } catch (error) {
+        showToast(`コピーに失敗しました: ${error.message}`, 'error');
+      }
+    }
+
+    function renderNewsStatus(summary) {
+      const statuses = Array.isArray(summary?.sourceStatus) ? summary.sourceStatus : [];
+      if (!statuses.length) return '';
+      return `<div class="chip-row" style="margin-bottom:14px;">${statuses.map((status) => {
+        const cls = status.ok ? 'good' : status.skipped ? 'warn' : 'hit';
+        const text = `${status.source}: ${status.skipped ? 'skip' : status.ok ? 'OK' : 'NG'} ${status.count ?? 0}件`;
+        return `<span class="chip ${cls}" title="${escapeHtml(status.detail || '')}">${escapeHtml(text)}</span>`;
+      }).join('')}</div>`;
+    }
+
+    function renderNewsRowsTable(title, rows) {
+      const columns = ['銘柄コード', '銘柄名', '株価変動率', '出来高変化', '材料', '情報源', '公式情報の有無', 'SNSでの反応', '注意点'];
+      const safeRows = Array.isArray(rows) ? rows : [];
+      if (!safeRows.length) {
+        return `<div class="card"><div class="card-title"><span>${escapeHtml(title)}</span><span class="subtle">0 rows</span></div><div class="empty" style="padding:24px;"><strong>該当なし</strong>取得対象の銘柄や期間を増やすと表示されます。</div></div>`;
+      }
+      const body = safeRows.map((row) => `<tr>${columns.map((col) => `<td>${escapeHtml(row[col] ?? '')}</td>`).join('')}</tr>`).join('');
+      return `<div class="card"><div class="card-title"><span>${escapeHtml(title)}</span><span class="subtle">${safeRows.length} rows</span></div><div class="table-wrap"><table><thead><tr>${columns.map((col) => `<th>${escapeHtml(col)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div></div>`;
+    }
+
+    function renderNewsItems(title, items, emptyLabel) {
+      const list = Array.isArray(items) ? items.slice(0, 12) : [];
+      if (!list.length) {
+        return `<div class="card news-section"><div class="card-title"><span>${escapeHtml(title)}</span><span class="subtle">0件</span></div><div class="empty" style="padding:22px;"><strong>${escapeHtml(emptyLabel)}</strong></div></div>`;
+      }
+      return `<div class="card news-section"><div class="card-title"><span>${escapeHtml(title)}</span><span class="subtle">${list.length}件</span></div><div class="news-list">${list.map((item) => {
+        const cls = ['official', 'reporting', 'market', 'social'].includes(item.sourceType) ? item.sourceType : '';
+        const code = item.code ? `${item.code} ${item.name || ''}` : '市場全体';
+        const titleText = item.material || item.title || '';
+        const source = `${item.sourceName || ''} / 信頼度 ${item.sourceReliability ?? '-'}`;
+        const link = item.url && /^https:\/\//.test(item.url) ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(titleText)}</a>` : escapeHtml(titleText);
+        return `<article class="news-item ${cls}"><div class="news-title"><span class="ticker">${escapeHtml(code.split(' ')[0])}</span> ${link}</div><div class="news-meta">${escapeHtml(code)} / ${escapeHtml(source)} / ${escapeHtml(formatDateTime(item.publishedAt))}</div>${item.snsReaction ? `<div class="subtle" style="margin-top:7px;">SNS: ${escapeHtml(item.snsReaction)}</div>` : ''}${item.caution ? `<div class="subtle" style="margin-top:7px;">注意: ${escapeHtml(item.caution)}</div>` : ''}</article>`;
+      }).join('')}</div></div>`;
+    }
+
+    function renderMorningNews() {
+      const container = $('newsContainer');
+      if (!container) return;
+      if (morningNewsLoading) {
+        container.innerHTML = `<div class="empty"><strong>朝ニュースを生成中です</strong>TDnet、EDINET、Yahoo!ファイナンス、X反応、株価ランキングを順番に確認しています。</div>`;
+        return;
+      }
+      if (!morningNews) {
+        container.innerHTML = `<div class="empty"><strong>朝ニュースはまだありません</strong>銘柄を追加してニュース生成を実行してください。</div>`;
+        return;
+      }
+      if (!morningNews.ok) {
+        container.innerHTML = `<div class="signal bad">${escapeHtml(morningNews.error || '朝ニュース生成に失敗しました')}</div>`;
+        return;
+      }
+      const finalOutput = morningNews.finalOutput || {};
+      const sections = morningNews.sections || {};
+      container.innerHTML = [
+        renderNewsStatus(morningNews),
+        `<div class="news-grid">${renderNewsItems('公式情報', sections.official, '公式情報は未検出です')}${renderNewsItems('報道', sections.reporting, '報道ニュースは未検出です')}${renderNewsItems('市場データ', sections.market, '市場データは未検出です')}${renderNewsItems('SNS反応・未確認情報', sections.social, 'SNS反応は未検出です')}</div>`,
+        renderNewsRowsTable('急騰銘柄トップ10', finalOutput.topGainers),
+        renderNewsRowsTable('急落銘柄ワースト10', finalOutput.topLosers),
+        renderNewsRowsTable('大きく動いた大型株', finalOutput.largeCapMovers),
+        renderNewsRowsTable('市場全体の注目ニュース', finalOutput.marketHighlights)
+      ].join('');
     }
 
     function avg(values) {
@@ -1465,7 +1741,7 @@
       if (!history.length) return '';
       return `<div class="signals" style="margin-top:12px;"><div class="signal"><strong>プロンプト履歴</strong><div class="history-list">${history.map((entry) => {
         const title = `${formatDateTime(entry.generatedAt)} / ${promptTemplateLabel(entry.template || 'earnings')} / ${entry.item?.title || 'IR'}`;
-        return `<div class="history-item"><div><div>${escapeHtml(title)}</div><div class="subtle">${escapeHtml(entry.item?.date || '')} ${entry.item?.url ? `<a href="${escapeHtml(entry.item.url)}" target="_blank" rel="noopener noreferrer">PDF</a>` : ''}</div></div><button class="btn small ghost" onclick="copyPromptHistory('${escapeJsArg(stock.id)}', '${escapeJsArg(entry.id)}')">再コピー</button></div>`;
+        return `<div class="history-item"><div><div>${escapeHtml(title)}</div><div class="subtle">${escapeHtml(entry.item?.date || '')} ${safeIrUrl(entry.item?.url) ? `<a href="${escapeHtml(safeIrUrl(entry.item.url))}" target="_blank" rel="noopener noreferrer">PDF</a>` : ''}</div></div><button class="btn small ghost" onclick="copyPromptHistory('${escapeJsArg(stock.id)}', '${escapeJsArg(entry.id)}')">再コピー</button></div>`;
       }).join('')}</div></div></div>`;
     }
 
@@ -1495,7 +1771,7 @@
         ${stock.irPromptError ? `<div class="signal bad">${escapeHtml(stock.irPromptError)}</div>` : ''}
         <div class="signals">
           ${renderSelectedIrGuide(stock)}
-          <div class="signal info"><strong>${escapeHtml(prompt.item?.date || '')} ${escapeHtml(prompt.item?.title || '')}</strong><div style="margin-top:8px;">テンプレート: ${escapeHtml(promptTemplateLabel(prompt.template || 'earnings'))}</div>${prompt.item?.url ? `<div style="margin-top:8px;"><a href="${escapeHtml(prompt.item.url)}" target="_blank" rel="noopener noreferrer">PDFを開く</a></div>` : ''}</div>
+          <div class="signal info"><strong>${escapeHtml(prompt.item?.date || '')} ${escapeHtml(prompt.item?.title || '')}</strong><div style="margin-top:8px;">テンプレート: ${escapeHtml(promptTemplateLabel(prompt.template || 'earnings'))}</div>${safeIrUrl(prompt.item?.url) ? `<div style="margin-top:8px;"><a href="${escapeHtml(safeIrUrl(prompt.item.url))}" target="_blank" rel="noopener noreferrer">PDFを開く</a></div>` : ''}</div>
         </div>
         <pre class="prompt-box">${escapeHtml(prompt.text || '')}</pre>
         ${renderPromptHistory(stock)}
@@ -1539,16 +1815,55 @@
       return `${Math.abs(diff)}日前`;
     }
 
+    function earningsDisplay(stock) {
+      const event = stock?.earningsEvent || {};
+      const date = event.nextDate || event.autoNextDate || '';
+      const daysText = daysUntilText(date);
+      const days = date ? -ageDays(date) : null;
+      const source = event.nextDate
+        ? (event.nextDateSource === 'auto' ? '自動反映' : '手入力')
+        : (event.autoNextDate ? '自動取得のみ' : '未取得');
+      const sourceDetail = event.nextDate
+        ? (event.nextDateSource === 'auto' && event.autoNextDateSource ? `${source} / ${event.autoNextDateSource}` : source)
+        : (event.autoNextDateSource ? `${source} / ${event.autoNextDateSource}` : source);
+      const cls = !date ? 'warn' : days == null ? 'warn' : days < 0 ? 'warn' : days <= 14 ? 'good' : 'info';
+      return {
+        date,
+        days,
+        daysText,
+        source,
+        sourceDetail,
+        status: event.status || '未確認',
+        className: cls
+      };
+    }
+
     function renderEarningsEventCard(stock) {
       const event = stock.earningsEvent || {};
+      const earnings = earningsDisplay(stock);
       const status = event.status || '未確認';
       const statusOptions = ['未確認', '決算前', '発表済み', '分析中', '分析完了', '要フォロー']
         .map((value) => `<option value="${escapeHtml(value)}" ${status === value ? 'selected' : ''}>${escapeHtml(value)}</option>`)
         .join('');
-      const nextClass = event.nextDate && daysUntilText(event.nextDate).includes('日前') ? 'warn' : 'info';
+      const sourceLink = event.autoNextDateSourceUrl
+        ? ` / <a href="${escapeHtml(event.autoNextDateSourceUrl)}" target="_blank" rel="noopener noreferrer">source</a>`
+        : '';
+      const jpxFallback = event.latestKnownDate
+        ? `<div class="subtle" style="margin-top:6px;">JPXで確認できた直近日: ${escapeHtml(event.latestKnownDate)}</div>`
+        : '';
+      const jpxError = event.jpxEarningsError
+        ? `<div class="subtle" style="margin-top:6px;">JPX取得エラー: ${escapeHtml(event.jpxEarningsError)}</div>`
+        : '';
+      const autoInfo = event.autoNextDate
+        ? `<div class="signal"><strong>自動取得した決算発表予定日</strong><div style="margin-top:8px;">${escapeHtml(event.autoNextDate)} / ${escapeHtml(daysUntilText(event.autoNextDate))}</div><div class="subtle" style="margin-top:6px;">source: ${escapeHtml(event.autoNextDateSource || 'unknown')} / ${formatDateTime(event.autoNextDateFetchedAt)}${sourceLink}</div>${jpxFallback}${jpxError}</div>`
+        : `<div class="signal warn"><strong>自動取得した決算発表予定日</strong><div style="margin-top:8px;">未取得です。「選択銘柄を更新」でJPX公式予定表を再取得できます。JPXに未掲載の場合は公式情報で確認して手入力してください。</div>${jpxFallback}${jpxError}</div>`;
+      const applyAutoButton = event.autoNextDate && event.nextDate !== event.autoNextDate
+        ? `<div class="actions" style="justify-content:flex-start; margin-top:12px;"><button type="button" class="btn small primary" onclick="applyAutoEarningsDate()">自動取得日を反映</button></div>`
+        : '';
       return `<div class="card" style="margin-top:16px;">
-        <div class="card-title"><span>決算イベント管理</span><span class="subtle">${escapeHtml(daysUntilText(event.nextDate))}</span></div>
-        <div class="signals"><div class="signal ${nextClass}"><strong>次回決算予定</strong><div style="margin-top:8px;">${escapeHtml(event.nextDate || '未設定')} / ステータス: ${escapeHtml(status)}</div></div></div>
+        <div class="card-title"><span>決算イベント管理</span><span class="subtle">${escapeHtml(earnings.daysText)}</span></div>
+        <div class="signals"><div class="signal ${earnings.className}"><strong>次回決算予定</strong><div style="margin-top:8px;">${escapeHtml(earnings.date || '未設定')} / ステータス: ${escapeHtml(status)}</div><div class="subtle" style="margin-top:6px;">${escapeHtml(earnings.sourceDetail)}</div></div>${autoInfo}</div>
+        ${applyAutoButton}
         <div class="form-grid" style="grid-template-columns: repeat(3, 1fr); margin-top:12px;">
           <div class="field"><label>次回決算予定日</label><input type="date" value="${escapeHtml(event.nextDate || '')}" onchange="updateEarningsEvent('nextDate', this.value)"></div>
           <div class="field"><label>前回決算日</label><input type="date" value="${escapeHtml(event.lastDate || '')}" onchange="updateEarningsEvent('lastDate', this.value)"></div>
@@ -1667,9 +1982,27 @@
       </div>`;
     }
 
+    function safeIrUrl(url) {
+      const value = String(url || '').trim();
+      if (!value) return '';
+      try {
+        const parsed = new URL(value);
+        if (parsed.protocol !== 'https:') return '';
+        const path = parsed.pathname;
+        const isYahooDisclosure = parsed.hostname === 'finance-frontend-pc-dist.west.edge.storage-yahoo.jp'
+          && /^\/disclosure\/\d{8}\/[A-Za-z0-9]+\.pdf$/i.test(path);
+        const isTdnet = parsed.hostname === 'www.release.tdnet.info'
+          && /^\/inbs\/[A-Za-z0-9_\-./]+\.pdf$/i.test(path);
+        return (isYahooDisclosure || isTdnet) ? value : '';
+      } catch {
+        return '';
+      }
+    }
+
     function normalizeIrItem(item) {
       return {
         ...item,
+        url: safeIrUrl(item.url),
         category: item.category && item.category !== 'other' && item.category !== 'kpi'
           ? item.category
           : categorizeIrTitle(item.title || '')
@@ -1708,6 +2041,7 @@
       renderSelects();
       renderIr();
       renderAnalysis();
+      renderMorningNews();
       renderAlertLog();
     }
 
@@ -1721,29 +2055,200 @@
       $('metricDeepDrop').textContent = errors;
     }
 
+    function checklistStats(stock) {
+      const checklist = stock.analysisChecklist || {};
+      const completed = CHECKLIST_ITEMS.filter((item) => checklist[item.key]?.checked).length;
+      return { completed, total: CHECKLIST_ITEMS.length, pct: Math.round((completed / CHECKLIST_ITEMS.length) * 100) };
+    }
+
+    function parseDateLike(value) {
+      if (!value) return null;
+      const date = new Date(value);
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    function ageDays(value) {
+      const date = parseDateLike(value);
+      if (!date) return null;
+      const today = new Date();
+      const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return Math.round((base - target) / 86400000);
+    }
+
+    function ageText(value) {
+      const days = ageDays(value);
+      if (days == null) return '未取得';
+      if (days === 0) return '今日';
+      if (days > 0) return `${days}日前`;
+      return `${Math.abs(days)}日後`;
+    }
+
+    function shortText(value, max = 82) {
+      const text = String(value || '').replace(/\s+/g, ' ').trim();
+      if (!text) return '未入力';
+      return text.length > max ? `${text.slice(0, max)}...` : text;
+    }
+
+    function dataAgeChip(label, value, warnDays) {
+      const days = ageDays(value);
+      const cls = days == null ? 'warn' : days > warnDays ? 'warn' : 'info';
+      return `<span class="chip ${cls}">${escapeHtml(label)} ${escapeHtml(ageText(value))}</span>`;
+    }
+
+    function portfolioFilterOptions() {
+      const options = [
+        ['all', 'すべて'],
+        ['holding', '保有'],
+        ['favorite', 'お気に入り'],
+        ['other', 'その他']
+      ];
+      return options.map(([value, label]) => `<option value="${value}" ${portfolioFilter === value ? 'selected' : ''}>${label}</option>`).join('');
+    }
+
+    function getVisiblePortfolioStocks() {
+      if (portfolioFilter === 'holding') return stocks.filter((stock) => stock.isHolding);
+      if (portfolioFilter === 'favorite') return stocks.filter((stock) => stock.isFavorite && !stock.isHolding);
+      if (portfolioFilter === 'other') return stocks.filter((stock) => !stock.isHolding && !stock.isFavorite);
+      return stocks;
+    }
+
+    function ownershipChips(stock) {
+      const chips = [];
+      if (stock.isHolding) chips.push('<span class="chip good">保有</span>');
+      if (stock.isFavorite) chips.push('<span class="chip info">お気に入り</span>');
+      if (!chips.length) chips.push('<span class="chip">その他</span>');
+      return chips.join('');
+    }
+
+    function portfolioGroupPriority(stock) {
+      if (stock.isHolding) return 300;
+      if (stock.isFavorite) return 150;
+      return 0;
+    }
+
+    function dashboardPriority(stock) {
+      const eventDays = earningsDisplay(stock).days ?? 999;
+      const checklist = checklistStats(stock);
+      const latestNote = (stock.aiResponseNotes || [])[0];
+      let score = portfolioGroupPriority(stock);
+      if (eventDays >= 0 && eventDays <= 7) score += 40;
+      if (eventDays > 7 && eventDays <= 30) score += 18;
+      if (checklist.pct < 60) score += 18;
+      if (!latestNote) score += 14;
+      if (ageDays(stock.quoteFetchedAt || stock.chartFetchedAt) > 1) score += 8;
+      return score;
+    }
+
+    function renderPortfolioControls(visibleStocks) {
+      const holdingCount = stocks.filter((stock) => stock.isHolding).length;
+      const favoriteCount = stocks.filter((stock) => stock.isFavorite && !stock.isHolding).length;
+      const otherCount = stocks.filter((stock) => !stock.isHolding && !stock.isFavorite).length;
+      return `<div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><span>表示グループ</span><span class="subtle">${visibleStocks.length}/${stocks.length} symbols</span></div>
+        <div class="form-grid" style="grid-template-columns: minmax(180px, 260px) 1fr;">
+          <div class="field"><label>Filter</label><select onchange="setPortfolioFilter(this.value)">${portfolioFilterOptions()}</select></div>
+          <div class="chip-row" style="align-self:center;">
+            <span class="chip good">保有 ${holdingCount}</span>
+            <span class="chip info">お気に入り ${favoriteCount}</span>
+            <span class="chip">その他 ${otherCount}</span>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderStockDashboard(list = stocks) {
+      const cards = [...list].sort((a, b) => dashboardPriority(b) - dashboardPriority(a)).map((stock) => {
+        const latestIr = (stock.irItems || [])[0];
+        const latestNote = (stock.aiResponseNotes || [])[0];
+        const checklist = checklistStats(stock);
+        const event = stock.earningsEvent || {};
+        const earnings = earningsDisplay(stock);
+        const memo = stock.thesisMemo || {};
+        const statusOptions = INVESTMENT_STATUSES.map((status) => `<option value="${escapeHtml(status)}" ${stock.investmentStatus === status ? 'selected' : ''}>${escapeHtml(status)}</option>`).join('');
+        const changePct = stock.price != null && stock.prevClose ? ((stock.price - stock.prevClose) / stock.prevClose) * 100 : null;
+        const eventText = earnings.date ? `${earnings.date} / ${earnings.daysText}` : '未設定';
+        const attention = [
+          dataAgeChip('株価', stock.quoteFetchedAt || stock.chartFetchedAt, 1),
+          earnings.date ? `<span class="chip ${earnings.className}">決算 ${escapeHtml(earnings.daysText)}</span>` : '<span class="chip warn">決算未設定</span>',
+          dataAgeChip('IR', latestIr?.date, 14),
+          dataAgeChip('AI', latestNote?.createdAt, 30),
+          checklist.pct < 60 ? '<span class="chip warn">確認不足</span>' : '<span class="chip good">確認進捗OK</span>'
+        ].join('');
+        return `<article class="dashboard-card">
+          <div class="dashboard-head">
+            <div>
+              <div class="dashboard-title"><span class="ticker">${escapeHtml(stock.code)}</span> ${escapeHtml(stock.name || stock.code)}</div>
+              <div class="subtle" style="margin-top:8px;">${escapeHtml(stock.market)} / ${escapeHtml(yahooSymbol(stock))}</div>
+              <div class="chip-row" style="margin-top:8px;">${ownershipChips(stock)}</div>
+            </div>
+            <div class="field"><label>Status</label><select onchange="updateInvestmentStatus('${escapeJsArg(stock.id)}', this.value)">${statusOptions}</select></div>
+          </div>
+          <div class="chip-row">${attention}</div>
+          <div class="dashboard-kpis">
+            <div class="dashboard-kpi"><span>Price</span><strong>${escapeHtml(formatPrice(stock.price, stock))}<br><span class="${changePct == null ? 'neutral' : changePct >= 0 ? 'positive' : 'negative'}">${escapeHtml(formatPct(changePct))}</span></strong></div>
+            <div class="dashboard-kpi"><span>Checklist</span><strong>${checklist.completed}/${checklist.total}<br><span class="subtle">${checklist.pct}%</span></strong></div>
+            <div class="dashboard-kpi"><span>AI Notes</span><strong>${(stock.aiResponseNotes || []).length}件<br><span class="subtle">${escapeHtml(ageText(latestNote?.createdAt))}</span></strong></div>
+          </div>
+          <div class="dashboard-briefs">
+            <div class="dashboard-brief ${earnings.className}" title="${escapeHtml(`${earnings.date || '未設定'} / ${earnings.daysText} / ${earnings.status} / ${earnings.sourceDetail}`)}">
+              <span>次回決算</span>
+              <strong>${escapeHtml(earnings.date || '未設定')}</strong>
+              <em>${escapeHtml(`${earnings.daysText} / ${earnings.status}`)}</em>
+            </div>
+            <div class="dashboard-brief ${latestIr ? 'info' : 'warn'}" title="${latestIr ? escapeHtml(`${latestIr.date} ${latestIr.category || 'IR'} / ${latestIr.title}`) : '未取得'}">
+              <span>最新IR</span>
+              <strong>${latestIr ? escapeHtml(`${latestIr.date} ${latestIr.category || 'IR'}`) : '未取得'}</strong>
+              <em>${latestIr ? escapeHtml(shortText(latestIr.title, 42)) : 'IR一括更新で取得'}</em>
+            </div>
+          </div>
+          <div class="dashboard-memo">
+            <div><strong>Bull</strong>${escapeHtml(shortText(memo.bull, 72))}</div>
+            <div><strong>Bear</strong>${escapeHtml(shortText(memo.bear, 72))}</div>
+            <div><strong>Watch</strong>${escapeHtml(shortText(memo.watch, 72))}</div>
+          </div>
+          <div class="actions" style="justify-content:flex-start; margin-top:12px;">
+            <button class="btn small ${stock.isHolding ? 'green' : 'ghost'}" onclick="toggleHolding('${escapeJsArg(stock.id)}')">${stock.isHolding ? '保有中' : '保有にする'}</button>
+            <button class="btn small ${stock.isFavorite ? 'primary' : 'ghost'}" onclick="toggleFavorite('${escapeJsArg(stock.id)}')">${stock.isFavorite ? '★お気に入り' : '☆お気に入り'}</button>
+            <button class="btn small primary" onclick="focusAnalysis('${escapeJsArg(stock.id)}')">分析へ</button>
+            <button class="btn small ghost" onclick="focusIr('${escapeJsArg(stock.id)}')">IRへ</button>
+            ${renderExternalStockLinks(stock)}
+            <button class="btn small green" onclick="refreshOne('${escapeJsArg(stock.id)}')">更新</button>
+          </div>
+        </article>`;
+      }).join('');
+      if (!cards) return '<div class="empty"><strong>このグループの銘柄はありません</strong>保有またはお気に入りを設定するとここに表示されます。</div>';
+      return `<div class="card" style="margin-bottom:16px;"><div class="card-title"><span>銘柄別ダッシュボード</span><span class="subtle">priority view</span></div><div class="dashboard-grid">${cards}</div><div class="mini-note">保有銘柄、お気に入り、決算予定が近い、チェックリスト未完了、AI回答未保存の銘柄ほど上に表示します。</div></div>`;
+    }
+
     function renderPortfolio() {
       const container = $('portfolioContainer');
       if (!stocks.length) {
         container.innerHTML = `<div class="empty"><strong>銘柄がまだありません</strong>まずは 7203 や AAPL などを追加してください。</div>`;
         return;
       }
-      const rows = stocks.map((stock) => {
+      const visibleStocks = getVisiblePortfolioStocks();
+      const rows = visibleStocks.map((stock) => {
         const changePct = stock.price != null && stock.prevClose ? ((stock.price - stock.prevClose) / stock.prevClose) * 100 : null;
         const latestIr = (stock.irItems || [])[0];
+        const earnings = earningsDisplay(stock);
         const technical = stock.technical || buildTechnical(stock);
         stock.technical = technical;
         const techChip = technical
           ? `<span class="chip ${technical.score >= 65 ? 'good' : technical.score <= 40 ? 'warn' : 'info'}">${technical.trend} ${technical.score}</span>`
           : '<span class="chip">分析待ち</span>';
         return `<tr>
-          <td><span class="ticker">${escapeHtml(stock.code)}</span><span class="market">${stock.market}</span><div class="name">${escapeHtml(stock.name || stock.code)}<br><span class="subtle">${escapeHtml(yahooSymbol(stock))}</span></div>${stock.error ? `<div class="chip hit" title="${escapeHtml(stock.error)}">価格取得エラー</div>` : stock.warning ? `<div class="chip warn" title="${escapeHtml(stock.warning)}">基本指標未取得</div>` : ''}</td>
+          <td><span class="ticker">${escapeHtml(stock.code)}</span><span class="market">${stock.market}</span><div class="name">${escapeHtml(stock.name || stock.code)}<br><span class="subtle">${escapeHtml(yahooSymbol(stock))}</span></div><div class="chip-row" style="margin-top:7px;">${ownershipChips(stock)}</div>${stock.error ? `<div class="chip hit" title="${escapeHtml(stock.error)}">価格取得エラー</div>` : stock.warning ? `<div class="chip warn" title="${escapeHtml(stock.warning)}">基本指標未取得</div>` : ''}</td>
           <td><div class="money">${formatPrice(stock.price, stock)}</div><div class="${changePct == null ? 'neutral' : changePct >= 0 ? 'positive' : 'negative'}">${formatPct(changePct)}</div><div class="subtle">${escapeHtml(stock.marketState || '')} / ${formatDateTime(stock.quoteFetchedAt || stock.chartFetchedAt)}</div></td>
           <td>${techChip}<div class="subtle" style="margin-top:7px;">RSI ${technical?.rsi == null ? '未取得' : technical.rsi.toFixed(1)}</div></td>
-          <td><label class="check"><input type="checkbox" ${stock.autoIr ? 'checked' : ''} ${stock.market !== 'JP' ? 'disabled' : ''} onchange="toggleAutoIr('${stock.id}', this.checked)">IR自動</label><div class="subtle" style="margin-top:7px;">${latestIr ? escapeHtml(latestIr.date + ' ' + latestIr.category) : (stock.irError ? escapeHtml(stock.irError) : 'IR未取得')}</div></td>
-          <td><div class="actions" style="justify-content:flex-start;"><button class="btn small primary" onclick="refreshOne('${stock.id}')">更新</button><button class="btn small green" onclick="focusAnalysis('${stock.id}')">分析</button><button class="btn small ghost" onclick="focusIr('${stock.id}')">IR</button><button class="btn small danger" onclick="removeStock('${stock.id}')">削除</button></div></td>
+          <td><label class="check"><input type="checkbox" ${stock.autoIr ? 'checked' : ''} ${stock.market !== 'JP' ? 'disabled' : ''} onchange="toggleAutoIr('${escapeJsArg(stock.id)}', this.checked)">IR自動</label><div class="subtle" style="margin-top:7px;">次回決算: ${escapeHtml(earnings.date ? `${earnings.date} / ${earnings.daysText}` : '未設定')}</div><div class="subtle" style="margin-top:7px;">${latestIr ? escapeHtml(latestIr.date + ' ' + latestIr.category) : (stock.irError ? escapeHtml(stock.irError) : 'IR未取得')}</div></td>
+          <td><div class="actions" style="justify-content:flex-start;"><button class="btn small ${stock.isHolding ? 'green' : 'ghost'}" onclick="toggleHolding('${escapeJsArg(stock.id)}')">${stock.isHolding ? '保有中' : '保有'}</button><button class="btn small ${stock.isFavorite ? 'primary' : 'ghost'}" onclick="toggleFavorite('${escapeJsArg(stock.id)}')">${stock.isFavorite ? '★' : '☆'}</button><button class="btn small primary" onclick="refreshOne('${escapeJsArg(stock.id)}')">更新</button><button class="btn small green" onclick="focusAnalysis('${escapeJsArg(stock.id)}')">分析</button><button class="btn small ghost" onclick="focusIr('${escapeJsArg(stock.id)}')">IR</button>${renderExternalStockLinks(stock)}<button class="btn small danger" onclick="removeStock('${escapeJsArg(stock.id)}')">削除</button></div></td>
         </tr>`;
       }).join('');
-      container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>銘柄</th><th>現在値</th><th>テクニカル</th><th>IR</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      const table = rows
+        ? `<div class="table-wrap"><table><thead><tr><th>銘柄</th><th>現在値</th><th>テクニカル</th><th>IR</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`
+        : '<div class="empty"><strong>このグループの銘柄はありません</strong>保有またはお気に入りを設定してください。</div>';
+      container.innerHTML = `${renderPortfolioControls(visibleStocks)}${renderStockDashboard(visibleStocks)}${table}`;
     }
 
     function renderSelects() {
@@ -1804,7 +2309,7 @@
         container.innerHTML = `<div class="empty"><strong>IRデータがありません</strong>日本株を追加して「IR一括更新」または「選択IR更新」を実行してください。</div>`;
         return;
       }
-      container.innerHTML = `<div class="ir-list">${list.map(({ stock, item }) => `<article class="ir-item"><div class="ir-head"><span>${escapeHtml(item.date)} ${escapeHtml(item.time || '')} / ${escapeHtml(stock.code)} ${escapeHtml(stock.name || '')}</span><span class="chip info">${escapeHtml(item.category || 'その他')}</span></div><div class="ir-title">${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>` : escapeHtml(item.title)}</div><div class="subtle" style="margin-top:8px;">${escapeHtml(item.exchange || '')}</div></article>`).join('')}</div>`;
+      container.innerHTML = `<div class="ir-list">${list.map(({ stock, item }) => `<article class="ir-item"><div class="ir-head"><span>${escapeHtml(item.date)} ${escapeHtml(item.time || '')} / ${escapeHtml(stock.code)} ${escapeHtml(stock.name || '')}</span><span class="chip info">${escapeHtml(item.category || 'その他')}</span></div><div class="ir-title">${safeIrUrl(item.url) ? `<a href="${escapeHtml(safeIrUrl(item.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>` : escapeHtml(item.title)}</div><div class="subtle" style="margin-top:8px;">${escapeHtml(item.exchange || '')}</div></article>`).join('')}</div>`;
     }
 
     function renderAnalysis() {
@@ -1850,7 +2355,7 @@
     function renderIrSignal(label, item) {
       if (!item) return `<div class="signal warn">${escapeHtml(label)}: 直近31日分では見つかりません。</div>`;
       const title = `${label}: ${item.date} ${item.title}`;
-      return `<div class="signal good">${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>` : escapeHtml(title)}</div>`;
+      return `<div class="signal good">${safeIrUrl(item.url) ? `<a href="${escapeHtml(safeIrUrl(item.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>` : escapeHtml(title)}</div>`;
     }
 
     function renderTechnicalBlock(stock, t) {
@@ -1891,6 +2396,7 @@
     function focusAnalysis(id) {
       switchTab('analysis');
       $('analysisStockSelect').value = String(id);
+      renderPromptControls();
       renderAnalysis();
     }
 
@@ -1907,6 +2413,41 @@
       saveState();
       renderAll();
       showToast(`${stock.code} のIR自動取得を${checked ? 'ON' : 'OFF'}にしました`, 'success');
+    }
+
+    function setPortfolioFilter(value) {
+      portfolioFilter = ['all', 'holding', 'favorite', 'other'].includes(value) ? value : 'all';
+      localStorage.setItem(STORAGE_PORTFOLIO_FILTER, portfolioFilter);
+      renderPortfolio();
+    }
+
+    function toggleHolding(id) {
+      const stock = stocks.find((s) => String(s.id) === String(id));
+      if (!stock) return;
+      stock.isHolding = !stock.isHolding;
+      if (stock.isHolding) stock.isFavorite = true;
+      saveState();
+      renderPortfolio();
+      showToast(`${stock.code} を${stock.isHolding ? '保有銘柄にしました' : '保有銘柄から外しました'}`, 'success');
+    }
+
+    function toggleFavorite(id) {
+      const stock = stocks.find((s) => String(s.id) === String(id));
+      if (!stock) return;
+      stock.isFavorite = !stock.isFavorite;
+      if (!stock.isFavorite) stock.isHolding = false;
+      saveState();
+      renderPortfolio();
+      showToast(`${stock.code} を${stock.isFavorite ? 'お気に入りにしました' : 'お気に入りから外しました'}`, 'success');
+    }
+
+    function updateInvestmentStatus(id, status) {
+      const stock = stocks.find((s) => String(s.id) === String(id));
+      if (!stock) return;
+      stock.investmentStatus = INVESTMENT_STATUSES.includes(status) ? status : '監視中';
+      saveState();
+      renderPortfolio();
+      showToast(`${stock.code} を「${stock.investmentStatus}」にしました`, 'success');
     }
 
     function removeStock(id) {
@@ -1945,15 +2486,17 @@
     function openLatestIr() {
       const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
       const latestIr = stock?.irItems?.[0];
-      if (!latestIr?.url) return showToast('開けるIR PDFがありません', 'warn');
-      window.open(latestIr.url, '_blank', 'noopener,noreferrer');
+      const url = safeIrUrl(latestIr?.url);
+      if (!url) return showToast('開けるIR PDFがありません', 'warn');
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
 
     function openSelectedPromptIr() {
       const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
       const item = getSelectedPromptIr(stock);
-      if (!item?.url) return showToast('開けるIR PDFがありません', 'warn');
-      window.open(item.url, '_blank', 'noopener,noreferrer');
+      const url = safeIrUrl(item?.url);
+      if (!url) return showToast('開けるIR PDFがありません', 'warn');
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
 
     function buildPromptEntry(stock, item, templateChoice = 'auto') {
@@ -1966,7 +2509,7 @@
           date: item.date || '',
           time: item.time || '',
           title: item.title || '',
-          url: item.url || '',
+          url: safeIrUrl(item.url),
           category: item.category || ''
         },
         template,
@@ -2059,9 +2602,25 @@
       if (!stock) return;
       stock.earningsEvent = stock.earningsEvent || {};
       stock.earningsEvent[field] = String(value || '');
+      if (field === 'nextDate') stock.earningsEvent.nextDateSource = 'manual';
       stock.earningsEvent.updatedAt = new Date().toISOString();
       saveState();
       if (field === 'nextDate' || field === 'status') renderAnalysis();
+    }
+
+    function applyAutoEarningsDate() {
+      const stock = currentAnalysisStock();
+      const autoDate = stock?.earningsEvent?.autoNextDate;
+      if (!stock || !autoDate) {
+        showToast('自動取得した決算予定日がありません', 'warn');
+        return;
+      }
+      stock.earningsEvent.nextDate = autoDate;
+      stock.earningsEvent.nextDateSource = 'auto';
+      stock.earningsEvent.updatedAt = new Date().toISOString();
+      saveState();
+      renderAll();
+      showToast(`${stock.code} の決算予定日を自動取得日に反映しました`, 'success');
     }
 
     function updateChecklistItem(key, field, value) {
@@ -2362,6 +2921,8 @@
       $('refreshAllBtn').addEventListener('click', () => refreshAll());
       $('refreshIrBtn').addEventListener('click', () => refreshAllIr());
       $('diagnosticsBtn').addEventListener('click', runDiagnostics);
+      $('refreshNewsBtn').addEventListener('click', refreshMorningNews);
+      $('copyNewsBtn').addEventListener('click', copyMorningNews);
       $('refreshSelectedIrBtn').addEventListener('click', refreshSelectedIr);
       $('clearIrBtn').addEventListener('click', renderIr);
       $('irStockFilter').addEventListener('change', renderIr);
@@ -2416,6 +2977,11 @@
     window.focusAnalysis = focusAnalysis;
     window.focusIr = focusIr;
     window.toggleAutoIr = toggleAutoIr;
+    window.setPortfolioFilter = setPortfolioFilter;
+    window.toggleHolding = toggleHolding;
+    window.toggleFavorite = toggleFavorite;
+    window.updateInvestmentStatus = updateInvestmentStatus;
+    window.applyAutoEarningsDate = applyAutoEarningsDate;
     window.removeStock = removeStock;
     init();
   </script>

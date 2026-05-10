@@ -10,90 +10,158 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$UpstreamTimeoutSeconds = 20
+$BatchTimeoutSeconds = 24
 
 # Ensure TLS 1.2 for older Windows/.NET
 try {
   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 } catch {}
 
-$prefix = "http://127.0.0.1:$Port/"
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add($prefix)
-
 $null = Add-Type -AssemblyName System.Net.Http -ErrorAction SilentlyContinue
 $http = [System.Net.Http.HttpClient]::new()
-$http.Timeout = [TimeSpan]::FromSeconds(30)
+$http.Timeout = [TimeSpan]::FromSeconds($UpstreamTimeoutSeconds)
 $http.DefaultRequestHeaders.UserAgent.ParseAdd("kabu-proxy/1.0")
 
-function Write-JsonResponse([System.Net.HttpListenerResponse]$res, [int]$status, [string]$body) {
-  $res.StatusCode = $status
-  $res.ContentType = "application/json; charset=utf-8"
-  $res.Headers["Access-Control-Allow-Origin"] = "*"
-  $res.Headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-  $res.Headers["Access-Control-Allow-Headers"] = "Content-Type"
+function Get-ReasonPhrase([int]$status) {
+  switch ($status) {
+    200 { "OK" }
+    204 { "No Content" }
+    400 { "Bad Request" }
+    500 { "Internal Server Error" }
+    502 { "Bad Gateway" }
+    504 { "Gateway Timeout" }
+    default { "OK" }
+  }
+}
+
+function Write-JsonResponse([System.IO.Stream]$stream, [int]$status, [string]$body) {
   $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
-  $res.ContentLength64 = $bytes.Length
-  $res.OutputStream.Write($bytes, 0, $bytes.Length)
-  $res.OutputStream.Close()
+  $reason = Get-ReasonPhrase $status
+  $headers = @(
+    "HTTP/1.1 $status $reason",
+    "Content-Type: application/json; charset=utf-8",
+    "Access-Control-Allow-Origin: *",
+    "Access-Control-Allow-Methods: GET, OPTIONS",
+    "Access-Control-Allow-Headers: Content-Type",
+    "Content-Length: $($bytes.Length)",
+    "Connection: close",
+    "",
+    ""
+  ) -join "`r`n"
+  $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($headers)
+  $stream.Write($headerBytes, 0, $headerBytes.Length)
+  if ($bytes.Length -gt 0) {
+    $stream.Write($bytes, 0, $bytes.Length)
+  }
 }
 
-function BadRequest([System.Net.HttpListenerResponse]$res, [string]$msg) {
-  Write-JsonResponse $res 400 ("{""error"":""$msg""}")
+function Write-NoContent([System.IO.Stream]$stream) {
+  $headers = @(
+    "HTTP/1.1 204 No Content",
+    "Access-Control-Allow-Origin: *",
+    "Access-Control-Allow-Methods: GET, OPTIONS",
+    "Access-Control-Allow-Headers: Content-Type",
+    "Content-Length: 0",
+    "Connection: close",
+    "",
+    ""
+  ) -join "`r`n"
+  $bytes = [System.Text.Encoding]::ASCII.GetBytes($headers)
+  $stream.Write($bytes, 0, $bytes.Length)
 }
 
-try {
-  $listener.Start()
-} catch {
-  Write-Host "Failed to start HttpListener on $prefix"
-  Write-Host $_.Exception.Message
-  Write-Host ""
-  Write-Host "Common fixes:"
-  Write-Host "- Try another port: powershell -ExecutionPolicy Bypass -File .\\kabu-proxy.ps1 -Port 8788"
-  Write-Host "- If you see Access is denied, run PowerShell as Administrator OR reserve URLACL. Example (Admin):"
-  Write-Host "  netsh http add urlacl url=$prefix user=$env:UserName"
-  throw
+function BadRequest([System.IO.Stream]$stream, [string]$msg) {
+  Write-JsonResponse $stream 400 ("{""error"":""$msg""}")
 }
 
-Write-Host "kabu-proxy listening on $prefix (Ctrl+C to stop)"
+function Parse-QueryString([string]$query) {
+  $result = @{}
+  if ([string]::IsNullOrWhiteSpace($query)) { return $result }
+  $raw = $query
+  if ($raw.StartsWith("?")) { $raw = $raw.Substring(1) }
+  foreach ($pair in $raw.Split("&", [System.StringSplitOptions]::RemoveEmptyEntries)) {
+    $kv = $pair.Split("=", 2)
+    $key = [System.Uri]::UnescapeDataString($kv[0].Replace("+", " "))
+    $value = ""
+    if ($kv.Length -gt 1) {
+      $value = [System.Uri]::UnescapeDataString($kv[1].Replace("+", " "))
+    }
+    $result[$key] = $value
+  }
+  return $result
+}
 
-function Handle-ProxyRequest([System.Net.HttpListenerContext]$ctx) {
-  $req = $ctx.Request
-  $res = $ctx.Response
+function Find-HeaderEnd([byte[]]$bytes) {
+  for ($i = 0; $i -le $bytes.Length - 4; $i++) {
+    if ($bytes[$i] -eq 13 -and $bytes[$i + 1] -eq 10 -and $bytes[$i + 2] -eq 13 -and $bytes[$i + 3] -eq 10) {
+      return $i
+    }
+  }
+  return -1
+}
+
+function Read-HttpRequest([System.Net.Sockets.TcpClient]$client) {
+  $stream = $client.GetStream()
+  if ($stream.CanTimeout) {
+    $stream.ReadTimeout = 10000
+    $stream.WriteTimeout = 20000
+  }
+  $buffer = New-Object byte[] 8192
+  $memory = [System.IO.MemoryStream]::new()
+  $headerEnd = -1
+  while ($headerEnd -lt 0) {
+    $read = $stream.Read($buffer, 0, $buffer.Length)
+    if ($read -le 0) { break }
+    $memory.Write($buffer, 0, $read)
+    $headerEnd = Find-HeaderEnd $memory.ToArray()
+    if ($memory.Length -gt 262144) { throw "request headers too large" }
+  }
+  if ($headerEnd -lt 0) { throw "request headers incomplete" }
+  $headerText = [System.Text.Encoding]::ASCII.GetString($memory.ToArray(), 0, $headerEnd)
+  $lines = $headerText -split "`r`n"
+  if ($lines.Length -eq 0 -or [string]::IsNullOrWhiteSpace($lines[0])) { throw "bad request line" }
+  $parts = $lines[0].Split(" ")
+  if ($parts.Length -lt 2) { throw "bad request" }
+  return [ordered]@{
+    Stream = $stream
+    Method = $parts[0].ToUpperInvariant()
+    Target = $parts[1]
+  }
+}
+
+Write-Host "kabu-proxy listening on http://127.0.0.1:$Port/ (Ctrl+C to stop)"
+
+function Handle-ProxyRequest([string]$Method, [string]$Path, [hashtable]$Query, [System.IO.Stream]$Stream) {
 
   try {
     # CORS preflight
-    if ($req.HttpMethod -eq "OPTIONS") {
-      $res.StatusCode = 204
-      $res.Headers["Access-Control-Allow-Origin"] = "*"
-      $res.Headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-      $res.Headers["Access-Control-Allow-Headers"] = "Content-Type"
-      $res.OutputStream.Close()
+    if ($Method -eq "OPTIONS") {
+      Write-NoContent $Stream
       return
     }
 
-    if ($req.HttpMethod -ne "GET") {
-      BadRequest $res "method not allowed"
+    if ($Method -ne "GET") {
+      BadRequest $Stream "method not allowed"
       return
     }
 
-    $path = $req.Url.AbsolutePath
-
-    if ($path -eq "/health") {
-      Write-JsonResponse $res 200 ("{""ok"":true,""time"":""$([DateTime]::Now.ToString('o'))""}")
+    if ($Path -eq "/health") {
+      Write-JsonResponse $Stream 200 ("{""ok"":true,""time"":""$([DateTime]::Now.ToString('o'))""}")
       return
     }
 
-    $q = $req.QueryString
+    $q = $Query
     $symbol = $q["symbol"]
 
-    if ($path -eq "/yahoo/chart-batch") {
+    if ($Path -eq "/yahoo/chart-batch") {
       $symbolsParam = $q["symbols"]
       if ([string]::IsNullOrWhiteSpace($symbolsParam)) {
-        BadRequest $res "missing symbols"
+        BadRequest $Stream "missing symbols"
         return
       }
       if ($symbolsParam.Length -gt 2048 -or $symbolsParam -notmatch '^[A-Za-z0-9\.\-\^=,]+$') {
-        BadRequest $res "invalid symbols"
+        BadRequest $Stream "invalid symbols"
         return
       }
 
@@ -114,7 +182,7 @@ function Handle-ProxyRequest([System.Net.HttpListenerContext]$ctx) {
 
       $tasks = @($requests | Where-Object { $_.Task -ne $null } | ForEach-Object { $_.Task })
       if ($tasks.Count -gt 0) {
-        try { [System.Threading.Tasks.Task]::WaitAll($tasks) } catch {}
+        try { [void][System.Threading.Tasks.Task]::WaitAll($tasks, [TimeSpan]::FromSeconds($BatchTimeoutSeconds)) } catch {}
       }
 
       $items = @()
@@ -125,6 +193,10 @@ function Handle-ProxyRequest([System.Net.HttpListenerContext]$ctx) {
         }
 
         try {
+          if (-not $item.Task.IsCompleted) {
+            $items += [pscustomobject]@{ symbol = $item.Symbol; status = 504; body = $null; error = "upstream timeout" }
+            continue
+          }
           $resp = $item.Task.Result
           $body = $resp.Content.ReadAsStringAsync().GetAwaiter().GetResult()
           $status = [int]$resp.StatusCode
@@ -142,36 +214,36 @@ function Handle-ProxyRequest([System.Net.HttpListenerContext]$ctx) {
       }
 
       $payload = ([pscustomobject]@{ result = $items } | ConvertTo-Json -Depth 5 -Compress)
-      Write-JsonResponse $res 200 $payload
+      Write-JsonResponse $Stream 200 $payload
       return
-    } elseif ($path -eq "/yahoo/chart") {
+    } elseif ($Path -eq "/yahoo/chart") {
       if ([string]::IsNullOrWhiteSpace($symbol)) {
-        BadRequest $res "missing symbol"
+        BadRequest $Stream "missing symbol"
         return
       }
       # Chart is a single-symbol endpoint.
       if ($symbol.Length -gt 32 -or $symbol -notmatch '^[A-Za-z0-9\.\-\^=]+$') {
-        BadRequest $res "invalid symbol"
+        BadRequest $Stream "invalid symbol"
         return
       }
       $symbolPath = [System.Uri]::EscapeDataString($symbol)
       $interval = $q["interval"]; if ([string]::IsNullOrWhiteSpace($interval)) { $interval = "1d" }
       $range = $q["range"]; if ([string]::IsNullOrWhiteSpace($range)) { $range = "1y" }
       $url = "https://query1.finance.yahoo.com/v8/finance/chart/$($symbolPath)?interval=$interval&range=$range"
-    } elseif ($path -eq "/yahoo/quote") {
+    } elseif ($Path -eq "/yahoo/quote") {
       if ([string]::IsNullOrWhiteSpace($symbol)) {
-        BadRequest $res "missing symbol"
+        BadRequest $Stream "missing symbol"
         return
       }
       # Quote supports comma-separated batches. Keep the allowed characters narrow.
       if ($symbol.Length -gt 2048 -or $symbol -notmatch '^[A-Za-z0-9\.\-\^=,]+$') {
-        BadRequest $res "invalid symbol"
+        BadRequest $Stream "invalid symbol"
         return
       }
       $symbolQuery = [System.Uri]::EscapeDataString($symbol)
       $url = "https://query2.finance.yahoo.com/v7/finance/quote?symbols=$symbolQuery"
     } else {
-      BadRequest $res "unknown path"
+      BadRequest $Stream "unknown path"
       return
     }
 
@@ -181,7 +253,7 @@ function Handle-ProxyRequest([System.Net.HttpListenerContext]$ctx) {
       $status = [int]$resp.StatusCode
 
       if ($resp.IsSuccessStatusCode) {
-        Write-JsonResponse $res 200 $body
+        Write-JsonResponse $Stream 200 $body
         return
       }
 
@@ -190,29 +262,51 @@ function Handle-ProxyRequest([System.Net.HttpListenerContext]$ctx) {
       $snippet = ($snippet -replace "\\s+", " ").Trim()
 
       $payload = "{""error"":""upstream status"",""upstreamStatus"":""$status"",""url"":""$url"",""body"":""$snippet""}"
-      Write-JsonResponse $res 502 $payload
+      Write-JsonResponse $Stream 502 $payload
     } catch {
       $msg = $_.Exception.Message
       $payload = "{""error"":""upstream failed"",""detail"":""$msg"",""url"":""$url""}"
-      Write-JsonResponse $res 502 $payload
+      Write-JsonResponse $Stream 502 $payload
     }
   } catch {
     try {
       $msg = $_.Exception.Message
-      Write-JsonResponse $res 500 ("{""error"":""proxy failed"",""detail"":""$msg""}")
+      Write-JsonResponse $Stream 500 ("{""error"":""proxy failed"",""detail"":""$msg""}")
     } catch {
-      try { $res.OutputStream.Close() } catch {}
     }
   }
 }
 
+$listener = $null
 try {
-  while ($listener.IsListening) {
-    $ctx = $listener.GetContext()
-    Handle-ProxyRequest $ctx
+  $ip = [System.Net.IPAddress]::Parse("127.0.0.1")
+  $listener = [System.Net.Sockets.TcpListener]::new($ip, $Port)
+  $listener.Start()
+
+  while ($true) {
+    $client = $listener.AcceptTcpClient()
+    $client.NoDelay = $true
+    $client.ReceiveTimeout = 10000
+    $client.SendTimeout = 20000
+    $stream = $null
+    try {
+      $request = Read-HttpRequest $client
+      $stream = $request.Stream
+      $uri = [System.Uri]::new("http://127.0.0.1:$Port$($request.Target)")
+      $query = Parse-QueryString $uri.Query
+      Handle-ProxyRequest -Method $request.Method -Path $uri.AbsolutePath -Query $query -Stream $stream
+    } catch {
+      try {
+        if ($stream) {
+          $msg = $_.Exception.Message
+          Write-JsonResponse $stream 502 ("{""error"":""proxy failed"",""detail"":""$msg""}")
+        }
+      } catch {}
+    } finally {
+      try { $client.Close() } catch {}
+    }
   }
 } finally {
-  try { $listener.Stop() } catch {}
-  try { $listener.Close() } catch {}
+  try { if ($listener) { $listener.Stop() } } catch {}
   try { $http.Dispose() } catch {}
 }

@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 set "PORT=8809"
-set "EXPECTED_VERSION=2026-04-25.4"
+set "EXPECTED_VERSION=2026-05-09.1"
 set "PROXY=%~dp0kabu-lab-proxy.ps1"
 set "APP=%~dp0kabu-lab.html"
 

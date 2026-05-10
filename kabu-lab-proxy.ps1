@@ -10,14 +10,28 @@
 #   /yahoo/chart?symbol=7203.T&range=1y&interval=1d
 #   /tdnet/ir?code=7203&days=31
 #   /ir/pdf-text?url=https%3A%2F%2F...
+#   /jpx/earnings?code=7203
 #   /name?code=7203&market=JP
+#   /news/morning?codes=7203,6758&days=3
 
 param(
   [int]$Port = 8791
 )
 
 $ErrorActionPreference = "Stop"
-$ProxyVersion = "2026-04-25.4"
+$ProxyVersion = "2026-05-09.1"
+$ClientReadTimeoutMs = 10000
+$ClientWriteTimeoutMs = 20000
+$JpxEarningsPageUrl = "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html"
+$JpxEarningsMaxBytes = 8 * 1024 * 1024
+$script:JpxEarningsCache = $null
+
+$NewsFetcherDir = Join-Path $PSScriptRoot "news-fetchers"
+foreach ($moduleName in @("Common.ps1", "TdnetFetcher.ps1", "EdinetFetcher.ps1", "YahooFinanceFetcher.ps1", "XFetcher.ps1", "PriceRankingFetcher.ps1", "MorningNewsAggregator.ps1")) {
+  $modulePath = Join-Path $NewsFetcherDir $moduleName
+  if (-not (Test-Path -LiteralPath $modulePath)) { throw "missing news fetcher module: $moduleName" }
+  . $modulePath
+}
 
 try {
   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -25,6 +39,11 @@ try {
 
 try {
   [System.Text.Encoding]::RegisterProvider([System.Text.CodePagesEncodingProvider]::Instance)
+} catch {}
+
+try {
+  Add-Type -AssemblyName System.IO.Compression -ErrorAction SilentlyContinue
+  Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
 } catch {}
 
 $null = Add-Type -AssemblyName System.Net.Http -ErrorAction SilentlyContinue
@@ -125,6 +144,13 @@ function Parse-QueryString {
     $result[$key] = $value
   }
   return $result
+}
+
+function Split-ListQueryValue {
+  param([string]$Value)
+
+  if ([string]::IsNullOrWhiteSpace($Value)) { return @() }
+  return @($Value.Split(",", [System.StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 }
 
 function Get-DeepErrorMessage {
@@ -475,6 +501,20 @@ function Get-CompanyName {
   $safeMarket = $Market.ToUpperInvariant()
   if ($safeMarket -eq "JP") {
     if ($Code -notmatch "^\d{4}$") { throw "invalid Japanese stock code" }
+    $symbol = "$Code.T"
+    try {
+      $fallbackJson = ConvertTo-YahooQuoteFromYahooJapan -Symbols $symbol
+      $fallback = $fallbackJson | ConvertFrom-Json
+      $fallbackQuote = @($fallback.quoteResponse.result) | Select-Object -First 1
+      if ($fallbackQuote -and ($fallbackQuote.longName -or $fallbackQuote.shortName)) {
+        $fallbackName = [string]$fallbackQuote.longName
+        if ([string]::IsNullOrWhiteSpace($fallbackName)) { $fallbackName = [string]$fallbackQuote.shortName }
+        if ($fallbackName -and $fallbackName -ne $Code -and $fallbackName -ne $symbol -and $fallbackName.Length -le 80) {
+          return $fallbackName
+        }
+      }
+    } catch {}
+
     $url = "https://finance.yahoo.co.jp/quote/$Code.T"
     $html = Invoke-UpstreamText -Url $url -EncodingName "UTF-8"
     $rawPatterns = @(
@@ -594,6 +634,33 @@ function Get-YahooJapanCurrentPrice {
   return ConvertTo-NullableDouble $m.Groups[1].Value
 }
 
+function Get-YahooJapanEarningsDate {
+  param([string]$PlainText)
+
+  if ([string]::IsNullOrWhiteSpace($PlainText)) { return $null }
+  $label = "$([char]0x6C7A)$([char]0x7B97)$([char]0x767A)$([char]0x8868)$([char]0x4E88)$([char]0x5B9A)$([char]0x65E5)"
+  $labelNext = "$([char]0x6B21)$([char]0x56DE)$([char]0x306E)$([char]0x6C7A)$([char]0x7B97)$([char]0x767A)$([char]0x8868)$([char]0x65E5)$([char]0x306F)"
+  $patterns = @(
+    [regex]::Escape($label) + "\s*[：:]\s*(\d{4})/(\d{1,2})/(\d{1,2})",
+    [regex]::Escape($labelNext) + "\s*(\d{4})$([char]0x5E74)\s*(\d{1,2})$([char]0x6708)\s*(\d{1,2})$([char]0x65E5)",
+    "$([char]0x6B21)$([char]0x56DE)$([char]0x306E)?\s*" + [regex]::Escape($label) + ".{0,80}?(\d{4})$([char]0x5E74)\s*(\d{1,2})$([char]0x6708)\s*(\d{1,2})$([char]0x65E5)"
+  )
+  foreach ($pattern in $patterns) {
+    $m = [regex]::Match($PlainText, $pattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+    if ($m.Success) {
+      $year = [int]$m.Groups[1].Value
+      $month = [int]$m.Groups[2].Value
+      $day = [int]$m.Groups[3].Value
+      try {
+        return (Get-Date -Year $year -Month $month -Day $day).ToString("yyyy-MM-dd")
+      } catch {
+        return $null
+      }
+    }
+  }
+  return $null
+}
+
 function ConvertTo-YahooQuoteFromYahooJapan {
   param([string]$Symbols)
 
@@ -631,6 +698,7 @@ function ConvertTo-YahooQuoteFromYahooJapan {
     $prevClose = Get-YahooJapanMetric -PlainText $plain -Label $labelPrevClose
 
     $price = Get-YahooJapanCurrentPrice -PlainText $plain -Code $code
+    $earningsDate = Get-YahooJapanEarningsDate -PlainText $plain
     if ($price -eq $null -and $per -ne $null -and $eps -ne $null -and $per -gt 0 -and $eps -gt 0) {
       $price = [Math]::Round($per * $eps, 2)
     }
@@ -657,6 +725,8 @@ function ConvertTo-YahooQuoteFromYahooJapan {
       epsTrailingTwelveMonths = $eps
       marketCap = $marketCap
       dividendYield = $dividendYield
+      earningsDate = $earningsDate
+      earningsDateSource = "YAHOO_JAPAN_PAGE"
       source = "YAHOO_JAPAN_PAGE"
     })
   }
@@ -668,6 +738,558 @@ function ConvertTo-YahooQuoteFromYahooJapan {
     }
   }
   return ($payload | ConvertTo-Json -Depth 12 -Compress)
+}
+
+function Test-AllJapaneseYahooSymbols {
+  param([string]$Symbols)
+
+  $items = $Symbols.Split(",", [System.StringSplitOptions]::RemoveEmptyEntries)
+  if ($items.Count -eq 0) { return $false }
+  foreach ($rawSymbol in $items) {
+    $symbol = $rawSymbol.Trim().ToUpperInvariant()
+    if ($symbol -notmatch "^\d{4}\.T$") { return $false }
+  }
+  return $true
+}
+
+function Get-ObjectPropertyValue {
+  param(
+    [object]$Object,
+    [string]$Name
+  )
+
+  if ($null -eq $Object) { return $null }
+  $prop = $Object.PSObject.Properties[$Name]
+  if ($null -eq $prop) { return $null }
+  return $prop.Value
+}
+
+function Set-ObjectPropertyValue {
+  param(
+    [object]$Object,
+    [string]$Name,
+    [object]$Value
+  )
+
+  $prop = $Object.PSObject.Properties[$Name]
+  if ($null -eq $prop) {
+    Add-Member -InputObject $Object -NotePropertyName $Name -NotePropertyValue $Value
+  } else {
+    $prop.Value = $Value
+  }
+}
+
+function Add-YahooJapanEarningsFallback {
+  param(
+    [string]$PrimaryJson,
+    [string]$Symbols
+  )
+
+  if (-not (Test-AllJapaneseYahooSymbols $Symbols)) { return $PrimaryJson }
+
+  try {
+    $primary = $PrimaryJson | ConvertFrom-Json
+  } catch {
+    return $PrimaryJson
+  }
+
+  $primaryResults = @($primary.quoteResponse.result)
+  if ($primaryResults.Count -eq 0) {
+    try {
+      return ConvertTo-YahooQuoteFromYahooJapan -Symbols $Symbols
+    } catch {
+      return $PrimaryJson
+    }
+  }
+
+  $needsFallback = $false
+  foreach ($quote in $primaryResults) {
+    $dateValue = Get-ObjectPropertyValue -Object $quote -Name "earningsDate"
+    if ([string]::IsNullOrWhiteSpace([string]$dateValue)) {
+      $needsFallback = $true
+      break
+    }
+  }
+  if (-not $needsFallback) { return $PrimaryJson }
+
+  try {
+    $fallbackJson = ConvertTo-YahooQuoteFromYahooJapan -Symbols $Symbols
+    $fallback = $fallbackJson | ConvertFrom-Json
+  } catch {
+    return $PrimaryJson
+  }
+
+  $fallbackBySymbol = @{}
+  foreach ($fallbackQuote in @($fallback.quoteResponse.result)) {
+    $fallbackSymbol = Get-ObjectPropertyValue -Object $fallbackQuote -Name "symbol"
+    if ($fallbackSymbol) { $fallbackBySymbol[[string]$fallbackSymbol] = $fallbackQuote }
+  }
+
+  foreach ($quote in $primaryResults) {
+    $symbol = Get-ObjectPropertyValue -Object $quote -Name "symbol"
+    if (-not $symbol -or -not $fallbackBySymbol.ContainsKey([string]$symbol)) { continue }
+
+    $currentDate = Get-ObjectPropertyValue -Object $quote -Name "earningsDate"
+    if (-not [string]::IsNullOrWhiteSpace([string]$currentDate)) { continue }
+
+    $fallbackQuote = $fallbackBySymbol[[string]$symbol]
+    $fallbackDate = Get-ObjectPropertyValue -Object $fallbackQuote -Name "earningsDate"
+    if ([string]::IsNullOrWhiteSpace([string]$fallbackDate)) { continue }
+
+    Set-ObjectPropertyValue -Object $quote -Name "earningsDate" -Value $fallbackDate
+    Set-ObjectPropertyValue -Object $quote -Name "earningsDateSource" -Value (Get-ObjectPropertyValue -Object $fallbackQuote -Name "earningsDateSource")
+  }
+
+  return ($primary | ConvertTo-Json -Depth 12 -Compress)
+}
+
+function ConvertTo-JpxDateString {
+  param([string]$Value)
+
+  $text = ([System.Net.WebUtility]::HtmlDecode([string]$Value) -replace "\s+", " ").Trim()
+  if ([string]::IsNullOrWhiteSpace($text)) { return $null }
+
+  $m = [regex]::Match($text, "(\d{4})\s*[/-]\s*(\d{1,2})\s*[/-]\s*(\d{1,2})")
+  if (-not $m.Success) {
+    $m = [regex]::Match($text, "(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日")
+  }
+  if (-not $m.Success -and $text -match "^\d{8}$") {
+    $m = [regex]::Match($text, "^(\d{4})(\d{2})(\d{2})$")
+  }
+  if ($m.Success) {
+    try {
+      $dt = Get-Date -Year ([int]$m.Groups[1].Value) -Month ([int]$m.Groups[2].Value) -Day ([int]$m.Groups[3].Value)
+      return $dt.ToString("yyyy-MM-dd")
+    } catch {
+      return $null
+    }
+  }
+
+  if ($text -match "^\d{5}(?:\.\d+)?$") {
+    try {
+      $serial = [double]::Parse($text, [Globalization.CultureInfo]::InvariantCulture)
+      if ($serial -ge 30000 -and $serial -le 80000) {
+        return ([DateTime]"1899-12-30").AddDays($serial).ToString("yyyy-MM-dd")
+      }
+    } catch {}
+  }
+  return $null
+}
+
+function Get-JpxScheduledDateFromContext {
+  param([string]$Text)
+
+  $clean = ([System.Net.WebUtility]::HtmlDecode([string]$Text) -replace "\s+", " ").Trim()
+  if ($clean -notmatch "開示予定|発表予定|Scheduled to be disclosed|Scheduled") { return $null }
+  return ConvertTo-JpxDateString $clean
+}
+
+function Test-JpxEarningsExcelUrl {
+  param([string]$Url)
+
+  try {
+    $uri = [System.Uri]::new($Url)
+    return (
+      $uri.Scheme -eq "https" -and
+      $uri.Host -eq "www.jpx.co.jp" -and
+      $uri.AbsolutePath.StartsWith("/listing/event-schedules/financial-announcement/") -and
+      $uri.AbsolutePath.ToLowerInvariant().EndsWith(".xlsx")
+    )
+  } catch {
+    return $false
+  }
+}
+
+function Resolve-JpxUrl {
+  param([string]$Href)
+
+  $decoded = [System.Net.WebUtility]::HtmlDecode([string]$Href)
+  $base = [System.Uri]::new($JpxEarningsPageUrl)
+  return ([System.Uri]::new($base, $decoded)).AbsoluteUri
+}
+
+function Get-JpxEarningsExcelLinks {
+  $html = Invoke-UpstreamText -Url $JpxEarningsPageUrl -EncodingName "UTF-8"
+  $links = New-Object System.Collections.Generic.List[object]
+  $seen = @{}
+  $matches = [regex]::Matches($html, "href\s*=\s*[""']([^""']+\.xlsx(?:\?[^""']*)?)[""']", [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+
+  foreach ($m in $matches) {
+    $url = Resolve-JpxUrl $m.Groups[1].Value
+    if (-not (Test-JpxEarningsExcelUrl $url)) { continue }
+    if ($seen.ContainsKey($url)) { continue }
+    $seen[$url] = $true
+
+    $start = [Math]::Max(0, $m.Index - 500)
+    $contextHtml = $html.Substring($start, $m.Index - $start)
+    $context = ConvertFrom-PageHtml $contextHtml
+    $defaultDate = Get-JpxScheduledDateFromContext $context
+    if ($context.Length -gt 220) { $context = $context.Substring($context.Length - 220) }
+
+    $links.Add([pscustomobject][ordered]@{
+      url = $url
+      defaultDate = $defaultDate
+      label = $context
+    })
+    if ($links.Count -ge 8) { break }
+  }
+  return $links
+}
+
+function Read-ZipEntryText {
+  param(
+    [System.IO.Compression.ZipArchive]$Archive,
+    [string]$Name
+  )
+
+  $entry = $Archive.GetEntry($Name)
+  if ($null -eq $entry) { return $null }
+  $stream = $entry.Open()
+  try {
+    $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::UTF8)
+    try { return $reader.ReadToEnd() } finally { $reader.Dispose() }
+  } finally {
+    $stream.Dispose()
+  }
+}
+
+function ConvertFrom-XlsxXmlText {
+  param([string]$Value)
+  return ([System.Net.WebUtility]::HtmlDecode([string]$Value) -replace "\s+", " ").Trim()
+}
+
+function Get-XlsxXmlAttribute {
+  param(
+    [string]$Attributes,
+    [string]$Name
+  )
+
+  $m = [regex]::Match($Attributes, "\b$Name\s*=\s*[""']([^""']*)[""']")
+  if ($m.Success) { return $m.Groups[1].Value }
+  return $null
+}
+
+function Get-XlsxSharedStrings {
+  param([System.IO.Compression.ZipArchive]$Archive)
+
+  $strings = New-Object System.Collections.Generic.List[string]
+  $xml = Read-ZipEntryText -Archive $Archive -Name "xl/sharedStrings.xml"
+  if ([string]::IsNullOrWhiteSpace($xml)) { return $strings }
+
+  foreach ($si in [regex]::Matches($xml, "<si\b[^>]*>(.*?)</si>", [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+    $parts = New-Object System.Collections.Generic.List[string]
+    foreach ($t in [regex]::Matches($si.Groups[1].Value, "<t\b[^>]*>(.*?)</t>", [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+      $parts.Add((ConvertFrom-XlsxXmlText $t.Groups[1].Value))
+    }
+    $strings.Add(($parts -join ""))
+  }
+  return $strings
+}
+
+function ConvertFrom-XlsxColumnName {
+  param([string]$Name)
+
+  $value = 0
+  foreach ($ch in $Name.ToUpperInvariant().ToCharArray()) {
+    if ($ch -lt 'A' -or $ch -gt 'Z') { continue }
+    $value = ($value * 26) + ([int][char]$ch - [int][char]'A' + 1)
+  }
+  return $value
+}
+
+function Get-XlsxCellValue {
+  param(
+    [string]$Attributes,
+    [string]$InnerXml,
+    [System.Collections.Generic.List[string]]$SharedStrings
+  )
+
+  $type = Get-XlsxXmlAttribute -Attributes $Attributes -Name "t"
+  if ($type -eq "inlineStr") {
+    $parts = New-Object System.Collections.Generic.List[string]
+    foreach ($t in [regex]::Matches($InnerXml, "<t\b[^>]*>(.*?)</t>", [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+      $parts.Add((ConvertFrom-XlsxXmlText $t.Groups[1].Value))
+    }
+    return ($parts -join "")
+  }
+
+  $m = [regex]::Match($InnerXml, "<v[^>]*>(.*?)</v>", [System.Text.RegularExpressions.RegexOptions]::Singleline)
+  if (-not $m.Success) { return "" }
+  $raw = ConvertFrom-XlsxXmlText $m.Groups[1].Value
+  if ($type -eq "s") {
+    try {
+      $idx = [int]$raw
+      if ($idx -ge 0 -and $idx -lt $SharedStrings.Count) { return $SharedStrings[$idx] }
+    } catch {}
+  }
+  return $raw
+}
+
+function ConvertFrom-XlsxWorksheetXml {
+  param(
+    [string]$Xml,
+    [System.Collections.Generic.List[string]]$SharedStrings,
+    [string]$SheetName,
+    [string]$SourceUrl,
+    [string]$DefaultDate
+  )
+
+  $rows = New-Object System.Collections.Generic.List[object]
+  foreach ($row in [regex]::Matches($Xml, "<row\b([^>]*)>(.*?)</row>", [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+    $rowNumber = Get-XlsxXmlAttribute -Attributes $row.Groups[1].Value -Name "r"
+    $values = @{}
+    $nextColumn = 1
+    foreach ($cell in [regex]::Matches($row.Groups[2].Value, "<c\b([^>]*)>(.*?)</c>", [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+      $ref = Get-XlsxXmlAttribute -Attributes $cell.Groups[1].Value -Name "r"
+      $column = $nextColumn
+      if ($ref -match "^([A-Z]+)\d+$") {
+        $column = ConvertFrom-XlsxColumnName $Matches[1]
+      }
+      $nextColumn = $column + 1
+      $value = Get-XlsxCellValue -Attributes $cell.Groups[1].Value -InnerXml $cell.Groups[2].Value -SharedStrings $SharedStrings
+      if (-not [string]::IsNullOrWhiteSpace([string]$value)) {
+        $values[$column] = [string]$value
+      }
+    }
+    if ($values.Count -gt 0) {
+      $rows.Add([pscustomobject][ordered]@{
+        sourceUrl = $SourceUrl
+        sourceDefaultDate = $DefaultDate
+        sheet = $SheetName
+        rowNumber = $rowNumber
+        values = $values
+      })
+    }
+  }
+  return $rows
+}
+
+function ConvertFrom-JpxEarningsXlsxBytes {
+  param(
+    [byte[]]$Bytes,
+    [string]$SourceUrl,
+    [string]$DefaultDate
+  )
+
+  if ($Bytes.Length -gt $JpxEarningsMaxBytes) {
+    throw "JPX earnings xlsx too large: $($Bytes.Length) bytes"
+  }
+
+  $rows = New-Object System.Collections.Generic.List[object]
+  $ms = [System.IO.MemoryStream]::new($Bytes)
+  $archive = $null
+  try {
+    $archive = [System.IO.Compression.ZipArchive]::new($ms, [System.IO.Compression.ZipArchiveMode]::Read)
+    $sharedStrings = Get-XlsxSharedStrings $archive
+    $sheetEntries = @($archive.Entries | Where-Object { $_.FullName -match "^xl/worksheets/sheet\d+\.xml$" } | Sort-Object FullName)
+    foreach ($entry in $sheetEntries) {
+      $stream = $entry.Open()
+      try {
+        $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::UTF8)
+        try { $xml = $reader.ReadToEnd() } finally { $reader.Dispose() }
+      } finally {
+        $stream.Dispose()
+      }
+      foreach ($row in (ConvertFrom-XlsxWorksheetXml -Xml $xml -SharedStrings $sharedStrings -SheetName $entry.FullName -SourceUrl $SourceUrl -DefaultDate $DefaultDate)) {
+        $rows.Add($row)
+      }
+    }
+  } finally {
+    if ($archive) { $archive.Dispose() }
+    $ms.Dispose()
+  }
+  return $rows
+}
+
+function Get-JpxEarningsDataset {
+  $todayKey = (Get-Date).ToString("yyyy-MM-dd")
+  if ($script:JpxEarningsCache -and $script:JpxEarningsCache.cacheDate -eq $todayKey) {
+    return $script:JpxEarningsCache
+  }
+
+  $links = @(Get-JpxEarningsExcelLinks)
+  $rows = New-Object System.Collections.Generic.List[object]
+  $errors = New-Object System.Collections.Generic.List[string]
+
+  foreach ($link in $links) {
+    try {
+      $bytes = Invoke-UpstreamBytes -Url $link.url
+      if ($bytes.Length -gt $JpxEarningsMaxBytes) {
+        throw "JPX earnings xlsx too large: $($bytes.Length) bytes"
+      }
+      foreach ($row in (ConvertFrom-JpxEarningsXlsxBytes -Bytes $bytes -SourceUrl $link.url -DefaultDate $link.defaultDate)) {
+        $rows.Add($row)
+      }
+    } catch {
+      $errors.Add("$($link.url): $(Get-DeepErrorMessage $_)")
+    }
+  }
+
+  $script:JpxEarningsCache = [pscustomobject][ordered]@{
+    cacheDate = $todayKey
+    fetchedAt = [DateTime]::Now.ToString("o")
+    sourcePage = $JpxEarningsPageUrl
+    links = $links
+    rows = $rows
+    errors = $errors
+  }
+  return $script:JpxEarningsCache
+}
+
+function Test-JpxCodeCell {
+  param(
+    [string]$Value,
+    [string]$Code
+  )
+
+  $clean = ([string]$Value).Trim()
+  if ($clean -eq $Code) { return $true }
+  if (($clean -replace "[^\d]", "") -eq $Code -and $clean -match "^\s*$Code\s*$") { return $true }
+  return $false
+}
+
+function Get-JpxRowText {
+  param([hashtable]$Values)
+
+  $parts = New-Object System.Collections.Generic.List[string]
+  foreach ($key in ($Values.Keys | Sort-Object {[int]$_})) {
+    $value = ([string]$Values[$key] -replace "\s+", " ").Trim()
+    if ($value) { $parts.Add($value) }
+  }
+  $text = ($parts -join " / ")
+  if ($text.Length -gt 360) { return $text.Substring(0, 360) }
+  return $text
+}
+
+function Get-JpxCompanyNameFromRow {
+  param(
+    [hashtable]$Values,
+    [string]$Code
+  )
+
+  foreach ($key in ($Values.Keys | Sort-Object {[int]$_})) {
+    $value = ([string]$Values[$key] -replace "\s+", " ").Trim()
+    if ([string]::IsNullOrWhiteSpace($value)) { continue }
+    if (Test-JpxCodeCell -Value $value -Code $Code) { continue }
+    if (ConvertTo-JpxDateString $value) { continue }
+    if ($value -match "コード|Code|市場|Market|予定|発表|決算|期末|四半期|Fiscal|Schedule|Date") { continue }
+    if ($value.Length -le 80) { return $value }
+  }
+  return ""
+}
+
+function Get-JpxRowMapKey {
+  param([object]$Row)
+  return "$($Row.sourceUrl)|$($Row.sheet)"
+}
+
+function Get-JpxHeaderMaps {
+  param([object]$Rows)
+
+  $maps = @{}
+  foreach ($row in $Rows) {
+    $values = $row.PSObject.Properties["values"].Value
+    if ($null -eq $values) { continue }
+
+    $scheduleCol = $null
+    $codeCol = $null
+    $companyCol = $null
+    foreach ($key in $values.Keys) {
+      $value = ([string]$values[$key] -replace "\s+", " ").Trim()
+      if ($value -match "決算発表予定日|Scheduled Dates? for Earnings Announcements") { $scheduleCol = [int]$key }
+      elseif ($value -match "コード|^Code$") { $codeCol = [int]$key }
+      elseif ($value -match "会社名|Issue Name" -and $null -eq $companyCol) { $companyCol = [int]$key }
+    }
+
+    if ($scheduleCol -ne $null -and $codeCol -ne $null) {
+      $maps[(Get-JpxRowMapKey -Row $row)] = [pscustomobject][ordered]@{
+        scheduleCol = $scheduleCol
+        codeCol = $codeCol
+        companyCol = $companyCol
+      }
+    }
+  }
+  return $maps
+}
+
+function Find-JpxEarningsForCode {
+  param([string]$Code)
+
+  $dataset = Get-JpxEarningsDataset
+  $datasetRows = $dataset.PSObject.Properties["rows"].Value
+  $datasetLinks = $dataset.PSObject.Properties["links"].Value
+  $datasetErrors = $dataset.PSObject.Properties["errors"].Value
+  $headerMaps = Get-JpxHeaderMaps -Rows $datasetRows
+  $today = (Get-Date).Date
+  $upcoming = New-Object System.Collections.Generic.List[object]
+  $past = New-Object System.Collections.Generic.List[object]
+
+  foreach ($row in $datasetRows) {
+    $values = $row.PSObject.Properties["values"].Value
+    $map = $headerMaps[(Get-JpxRowMapKey -Row $row)]
+    $hasCode = $false
+    if ($map -and $values.ContainsKey($map.codeCol)) {
+      $hasCode = Test-JpxCodeCell -Value $values[$map.codeCol] -Code $Code
+    } else {
+      foreach ($key in $values.Keys) {
+        if (Test-JpxCodeCell -Value $values[$key] -Code $Code) {
+          $hasCode = $true
+          break
+        }
+      }
+    }
+    if (-not $hasCode) { continue }
+
+    $dateCandidates = New-Object System.Collections.Generic.List[string]
+    if ($map -and $values.ContainsKey($map.scheduleCol)) {
+      $scheduleDate = ConvertTo-JpxDateString $values[$map.scheduleCol]
+      if ($scheduleDate) {
+        $dateCandidates.Add($scheduleDate)
+        $hasCode = $true
+      }
+    } elseif ($row.sourceDefaultDate) {
+      $dateCandidates.Add([string]$row.sourceDefaultDate)
+    }
+
+    foreach ($dateText in ($dateCandidates | Select-Object -Unique)) {
+      try {
+        $dt = [DateTime]::ParseExact($dateText, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
+      } catch {
+        continue
+      }
+      $entry = [pscustomobject][ordered]@{
+        date = $dateText
+        companyName = Get-JpxCompanyNameFromRow -Values $values -Code $Code
+        rowText = Get-JpxRowText -Values $values
+        sourceUrl = $row.sourceUrl
+        sourceDefaultDate = $row.sourceDefaultDate
+        sheet = $row.sheet
+        rowNumber = $row.rowNumber
+      }
+      if ($dt.Date -ge $today) { $upcoming.Add($entry) } else { $past.Add($entry) }
+    }
+  }
+
+  $best = @($upcoming | Sort-Object date | Select-Object -First 1)
+  $latestPast = @($past | Sort-Object date -Descending | Select-Object -First 1)
+  return [pscustomobject][ordered]@{
+    ok = $true
+    code = $Code
+    date = if ($best.Count) { $best[0].date } else { $null }
+    dateSource = if ($best.Count) { "JPX_OFFICIAL_EXCEL" } else { $null }
+    confidence = if ($best.Count) { "official" } else { "not_found" }
+    companyName = if ($best.Count) { $best[0].companyName } else { "" }
+    rowText = if ($best.Count) { $best[0].rowText } else { "" }
+    sourceUrl = if ($best.Count) { $best[0].sourceUrl } else { $null }
+    latestKnownDate = if ($latestPast.Count) { $latestPast[0].date } else { $null }
+    latestKnownRowText = if ($latestPast.Count) { $latestPast[0].rowText } else { "" }
+    fetchedAt = $dataset.fetchedAt
+    cacheDate = $dataset.cacheDate
+    sourcePage = $dataset.sourcePage
+    sourceFileCount = $datasetLinks.Count
+    parsedRowCount = $datasetRows.Count
+    errors = $datasetErrors
+  }
 }
 
 function Get-CellByClass {
@@ -1006,6 +1628,10 @@ function Read-HttpRequest {
   param([System.Net.Sockets.TcpClient]$Client)
 
   $stream = $Client.GetStream()
+  if ($stream.CanTimeout) {
+    $stream.ReadTimeout = $ClientReadTimeoutMs
+    $stream.WriteTimeout = $ClientWriteTimeoutMs
+  }
   $buffer = New-Object byte[] 8192
   $memory = [System.IO.MemoryStream]::new()
   $headerEnd = -1
@@ -1115,6 +1741,19 @@ function Handle-Request {
     Send-Json $Stream 200 @{ ok = $true; code = $code; market = $market.ToUpperInvariant(); name = $name }
     return
   }
+  if ($Path -eq "/jpx/earnings") {
+    $code = $Query["code"]
+    if ([string]::IsNullOrWhiteSpace($code) -or $code -notmatch "^\d{4}$") {
+      Send-Json $Stream 400 @{ ok = $false; error = "code must be a 4 digit Japanese stock code" }
+      return
+    }
+    try {
+      Send-Json $Stream 200 (Find-JpxEarningsForCode -Code $code)
+    } catch {
+      Send-Json $Stream 502 @{ ok = $false; code = $code; error = "jpx earnings failed"; detail = (Get-DeepErrorMessage $_) }
+    }
+    return
+  }
   if ($Path -eq "/yahoo/quote") {
     $symbol = $Query["symbol"]
     if ([string]::IsNullOrWhiteSpace($symbol)) {
@@ -1131,7 +1770,8 @@ function Handle-Request {
       "https://query1.finance.yahoo.com/v7/finance/quote?symbols=$encoded"
     )
     try {
-      Send-Body $Stream 200 (Invoke-UpstreamJsonAny $urls)
+      $primaryJson = Invoke-UpstreamJsonAny $urls
+      Send-Body $Stream 200 (Add-YahooJapanEarningsFallback -PrimaryJson $primaryJson -Symbols $symbol)
     } catch {
       Send-Body $Stream 200 (ConvertTo-YahooQuoteFromYahooJapan -Symbols $symbol)
     }
@@ -1201,6 +1841,36 @@ function Handle-Request {
     Send-Json $Stream 200 @{ ok = $true; source = "TDnet"; code = $code; days = $safeDays; fetchedAt = [DateTime]::Now.ToString("o"); count = $items.Count; items = $items }
     return
   }
+  if ($Path -eq "/news/morning") {
+    $codes = @(Split-ListQueryValue $Query["codes"])
+    $terms = @(Split-ListQueryValue $Query["terms"])
+    $largeCaps = @(Split-ListQueryValue $Query["largeCaps"])
+    if ($codes.Count -gt 120) {
+      Send-Json $Stream 400 @{ ok = $false; error = "too many codes" }
+      return
+    }
+    foreach ($code in $codes) {
+      if ($code -notmatch "^\d{4}$") {
+        Send-Json $Stream 400 @{ ok = $false; error = "codes must be 4 digit Japanese stock codes" }
+        return
+      }
+    }
+    $days = 3
+    if ($Query["days"]) { [void][int]::TryParse($Query["days"], [ref]$days) }
+    $safeDays = [Math]::Min([Math]::Max($days, 1), 31)
+    $xSignals = [string]$Query["xSignals"]
+    if ($xSignals.Length -gt 200000) {
+      Send-Json $Stream 400 @{ ok = $false; error = "xSignals is too large" }
+      return
+    }
+    try {
+      $summary = Get-MorningStockNewsSummary -Codes $codes -Days $safeDays -Terms $terms -XSignalsJson $xSignals -LargeCapCodes $largeCaps
+      Send-Json $Stream 200 $summary
+    } catch {
+      Send-Json $Stream 502 @{ ok = $false; error = "morning news failed"; detail = (Get-DeepErrorMessage $_) }
+    }
+    return
+  }
   if ($Path -eq "/ir/pdf-text") {
     $url = $Query["url"]
     if (-not (Test-AllowedPdfUrl -Url $url)) {
@@ -1231,6 +1901,10 @@ try {
 
   while ($true) {
     $client = $listener.AcceptTcpClient()
+    $client.NoDelay = $true
+    $client.ReceiveTimeout = $ClientReadTimeoutMs
+    $client.SendTimeout = $ClientWriteTimeoutMs
+    $stream = $null
     try {
       $request = Read-HttpRequest -Client $client
       $stream = $request.Stream

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -1631,10 +1631,20 @@
     // =============================================
     // STATE
     // =============================================
-    let stocks = JSON.parse(localStorage.getItem('kabu_stocks') || '[]');
-    let alerts = JSON.parse(localStorage.getItem('kabu_alerts') || '[]');
-    let history = JSON.parse(localStorage.getItem('kabu_history') || '{}');
-    let alertLog = JSON.parse(localStorage.getItem('kabu_alert_log') || '[]');
+    function safeLoadJson(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        console.warn(`Failed to load ${key}; using fallback`, error);
+        return fallback;
+      }
+    }
+
+    let stocks = safeLoadJson('kabu_stocks', []);
+    let alerts = safeLoadJson('kabu_alerts', []);
+    let history = safeLoadJson('kabu_history', {});
+    let alertLog = safeLoadJson('kabu_alert_log', []);
     let rsiChart = null;
     let expandedPreviewIds = new Set();
     function getLocalProxyBase() {
@@ -1648,6 +1658,13 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function escapeJsArg(value) {
+      return escapeHtml(String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r?\n/g, ' '));
     }
     async function testLocalProxy() {
       const mkSignal = (ms) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return c.signal; };
@@ -1692,7 +1709,7 @@
     };
     let alertPresets = {
       ...DEFAULT_ALERT_PRESETS,
-      ...JSON.parse(localStorage.getItem('kabu_alert_presets') || '{}')
+      ...safeLoadJson('kabu_alert_presets', {})
     };
     const DEFAULT_VISIBLE_COLUMNS = {
       status: true,
@@ -1704,7 +1721,7 @@
     };
     let visibleColumns = {
       ...DEFAULT_VISIBLE_COLUMNS,
-      ...JSON.parse(localStorage.getItem('kabu_visible_columns') || '{}')
+      ...safeLoadJson('kabu_visible_columns', {})
     };
     let displayDensity = localStorage.getItem('kabu_density') || 'standard';
     let refreshScope = localStorage.getItem('kabu_refresh_scope') || 'smart';
@@ -1857,7 +1874,20 @@
       if (scope) scope.value = refreshScope;
     }
 
+    function normalizeTickerInput(value, market) {
+      const raw = String(value || '').trim().toUpperCase();
+      if (market === 'JP') return raw.replace(/\.T$/i, '').replace(/\D/g, '').slice(0, 4);
+      return raw.replace(/\s+/g, '').replace(/[^A-Z0-9.\-=^]/g, '').slice(0, 32);
+    }
+
+    function isValidTickerInput(value, market) {
+      if (market === 'JP') return /^\d{4}$/.test(value);
+      return /^[A-Z0-9.\-=^]{1,32}$/.test(value);
+    }
+
     function normalizeStock(stock) {
+      stock.market = stock.market === 'US' ? 'US' : 'JP';
+      stock.ticker = normalizeTickerInput(stock.ticker, stock.market);
       if (!stock.group) stock.group = 'watch';
       if (stock.note == null) stock.note = '';
       if (stock.buyPrice == null || stock.buyPrice === '') stock.buyPrice = null;
@@ -2213,11 +2243,12 @@
     // ADD STOCK
     // =============================================
     function addStock() {
-      const ticker = document.getElementById('inputTicker').value.trim().toUpperCase();
       const name = document.getElementById('inputName').value.trim();
       const market = document.getElementById('inputMarket').value;
+      const ticker = normalizeTickerInput(document.getElementById('inputTicker').value, market);
 
       if (!ticker) { showToast('銘柄コードを入力してください', 'error'); return; }
+      if (!isValidTickerInput(ticker, market)) { showToast('銘柄コードの形式が正しくありません', 'error'); return; }
       if (stocks.find(s => s.ticker === ticker)) { showToast('すでに登録済みです', 'error'); return; }
 
       const types = getSelectedAlertTypes();
@@ -2301,10 +2332,31 @@
       return q?.regularMarketPrice ?? q?.postMarketPrice ?? q?.preMarketPrice ?? null;
     }
 
+    function isPlaceholderName(stock) {
+      return !stock.name || stock.name === stock.ticker || stock.name === getYahooSymbol(stock);
+    }
+
+    function cleanCompanyName(name) {
+      return String(name || '')
+        .replace(/\s+/g, ' ')
+        .replace(/\(株\)/g, '株式会社')
+        .replace(/㈱/g, '株式会社')
+        .trim();
+    }
+
+    function applyNameFromQuote(stock, q) {
+      if (!isPlaceholderName(stock)) return false;
+      const name = cleanCompanyName(q?.longName || q?.shortName || q?.displayName);
+      if (!name || name === stock.ticker || name === getYahooSymbol(stock)) return false;
+      stock.name = name;
+      return true;
+    }
+
     function applyQuoteToStock(stock, q) {
       const price = getQuotePrice(q);
       if (price == null || isNaN(price)) return false;
 
+      applyNameFromQuote(stock, q);
       stock.currentPrice = price;
       stock.prevClose = q.regularMarketPreviousClose ?? q.previousClose ?? stock.prevClose ?? null;
       stock.currency = q.currency || stock.currency;
@@ -2383,6 +2435,7 @@
       const chartResult = data?.chart?.result?.[0];
       const meta = chartResult?.meta;
       if (!meta) throw new Error('no meta');
+      applyNameFromQuote(stock, meta);
 
       const closeSnapshot = computeLatestCloseSnapshot(chartResult);
       const marketState = meta.marketState || 'CLOSED';
@@ -2585,6 +2638,7 @@
           const q = d?.quoteResponse?.result?.[0];
           if (!q) throw new Error('no quote');
 
+          applyNameFromQuote(stock, q);
           const perVal = q.trailingPE ?? q.forwardPE;
           const pbrVal = q.priceToBook;
           if (perVal != null && !isNaN(perVal)) stock.per = round2(perVal);
@@ -3073,7 +3127,7 @@
       ${visibleColumns.alerts !== false ? `<td>${alertHtml}</td>` : ''}
       ${visibleColumns.updated !== false ? `<td><span class="fetching" style="cursor:pointer;" onclick="showFetchError(${s.id})" title="${escapeHtml(s.fetchErrorReason || '')}">${s.lastFetched || '—'}${s.fetchError && s.currentPrice != null ? ' <span style="color:var(--yellow);font-size:10px;">(前回値)</span>' : ''}${s.fetchErrorReason ? ' <span style="color:var(--text-dim);font-size:10px;">(' + escapeHtml((s.fetchErrorReason || '').slice(0, 200)) + ')</span>' : ''}</span></td>` : ''}
       ${visibleColumns.actions !== false ? `<td class="row-actions">
-        <button class="btn-chart" onclick="showRSIFor('${s.ticker}')">📊</button>
+        <button class="btn-chart" onclick="showRSIFor('${escapeJsArg(s.ticker)}')">📊</button>
         <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="togglePreview(${s.id})">推移</button>
         <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="editBuyPrice(${s.id})">買値</button>
         <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="editReviewDate(${s.id})">確認日</button>
