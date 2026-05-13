@@ -90,7 +90,7 @@
     .metric { border-radius: 19px; padding: 17px; }
     .metric span { display: block; color: var(--muted); font: 900 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
     .metric strong { display: block; margin-top: 9px; font: 900 34px/1 var(--mono); letter-spacing: -.06em; }
-    .tabs { display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tabs { position: sticky; top: 10px; z-index: 12; display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 14px; padding: 8px; border: 1px solid rgba(23,32,51,.08); border-radius: 999px; background: rgba(246,239,226,.78); backdrop-filter: blur(18px); box-shadow: 0 16px 36px rgba(23,32,51,.08); }
     .tab { border: 1px solid rgba(23,32,51,.12); border-radius: 999px; padding: 10px 16px; color: var(--sub); background: rgba(255,255,255,.38); font-weight: 900; }
     .tab.active { color: #fff; background: var(--ink); border-color: var(--ink); }
     .panel { display: none; }
@@ -158,6 +158,41 @@
     .dashboard-memo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
     .dashboard-memo div { border-radius: 14px; padding: 10px; background: rgba(255,255,255,.42); border: 1px solid rgba(23,32,51,.08); color: var(--sub); font-size: 12px; line-height: 1.55; }
     .dashboard-memo strong { display: block; color: var(--ink); margin-bottom: 5px; }
+    .morning-card { overflow: hidden; color: #fff; border-color: rgba(255,255,255,.2); background: radial-gradient(circle at top right, rgba(201,139,33,.26), transparent 26rem), linear-gradient(145deg, rgba(23,32,51,.96), rgba(60,49,37,.92)); }
+    .morning-card .card-title { color: #fff; }
+    .morning-card .subtle, .morning-card .mini-note { color: rgba(255,255,255,.68); }
+    .morning-grid { display: grid; grid-template-columns: minmax(260px, .78fr) minmax(0, 1.22fr); gap: 14px; align-items: start; }
+    .morning-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .morning-kpi { border: 1px solid rgba(255,255,255,.14); border-radius: 18px; padding: 13px; background: rgba(255,255,255,.08); }
+    .morning-kpi span { display: block; color: rgba(255,255,255,.58); font: 900 10px/1 var(--mono); letter-spacing: .09em; text-transform: uppercase; }
+    .morning-kpi strong { display: block; margin-top: 9px; font: 900 27px/1 var(--mono); letter-spacing: -.06em; color: #fff; }
+    .morning-list { display: grid; gap: 10px; }
+    .morning-item { border: 1px solid rgba(255,255,255,.14); border-left: 5px solid rgba(255,255,255,.24); border-radius: 18px; padding: 12px; background: rgba(255,255,255,.09); }
+    .morning-item.hit { border-left-color: var(--red); }
+    .morning-item.warn { border-left-color: var(--gold); }
+    .morning-item.info { border-left-color: var(--blue); }
+    .morning-item.good { border-left-color: var(--green); }
+    .morning-item-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+    .morning-item-title { min-width: 0; font-weight: 900; line-height: 1.35; }
+    .morning-item-title .name { color: rgba(255,255,255,.72); }
+    .morning-action { margin-top: 9px; color: rgba(255,255,255,.78); font-size: 12px; line-height: 1.65; }
+    .watch-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .watch-lane { min-width: 0; border: 1px solid var(--line); border-top: 5px solid var(--line); border-radius: 18px; padding: 13px; background: rgba(255,255,255,.46); }
+    .watch-lane.good { border-top-color: var(--green); }
+    .watch-lane.warn { border-top-color: var(--gold); }
+    .watch-lane.bad { border-top-color: var(--red); }
+    .watch-lane.info { border-top-color: var(--blue); }
+    .watch-lane-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; font-weight: 900; letter-spacing: -.03em; }
+    .watch-list { display: grid; gap: 9px; }
+    .watch-item { border: 1px solid rgba(23,32,51,.1); border-radius: 14px; padding: 10px; background: rgba(255,255,255,.58); }
+    .watch-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+    .watch-item-title { min-width: 0; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .watch-item-name { margin-top: 6px; color: var(--sub); font-size: 12px; line-height: 1.45; font-weight: 700; overflow-wrap: anywhere; }
+    .watch-action { color: var(--sub); font-size: 12px; line-height: 1.55; margin-top: 7px; }
+    .focus-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .focus-item { border: 1px solid rgba(23,32,51,.12); border-left: 5px solid var(--accent); border-radius: 17px; padding: 12px; background: rgba(255,255,255,.62); }
+    .focus-item-title { font-weight: 900; line-height: 1.35; }
+    .focus-item-name { margin-top: 7px; color: var(--sub); font-size: 13px; line-height: 1.45; font-weight: 700; }
     .news-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
     .news-section { min-width: 0; }
     .news-list { display: grid; gap: 9px; }
@@ -168,6 +203,11 @@
     .news-item.social { border-left-color: var(--red); }
     .news-title { color: var(--ink); font-weight: 900; }
     .news-meta { margin-top: 6px; color: var(--muted); font: 900 11px/1.45 var(--mono); }
+    .ir-status-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .ir-status-box { border: 1px solid rgba(23,32,51,.1); border-radius: 15px; padding: 11px 12px; background: rgba(255,255,255,.52); }
+    .ir-status-box span { display: block; color: var(--muted); font: 900 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .ir-status-box strong { display: block; margin-top: 7px; font: 900 22px/1 var(--mono); letter-spacing: -.05em; }
+    .ir-status-table td { font-size: 12px; }
     .checklist-grid { display: grid; gap: 10px; }
     .checklist-item { display: grid; grid-template-columns: minmax(180px, .55fr) 1fr; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.52); border: 1px solid rgba(23,32,51,.1); }
     .diff-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -177,8 +217,17 @@
     .toast.error { background: var(--red); }
     .toast.success { background: var(--green); }
     .toast.warn { background: var(--gold); color: var(--ink); }
-    @media (max-width: 1060px) { .hero, .controls, .grid-2, .ai-columns, .diff-grid, .dashboard-grid, .news-grid { grid-template-columns: 1fr; } .form-grid, .metrics, .analysis-grid { grid-template-columns: repeat(2, 1fr); } .actions { justify-content: flex-start; } }
-    @media (max-width: 720px) { .shell { width: min(100% - 22px, 1380px); padding-top: 14px; } .hero-main, .hero-side, .card { border-radius: 20px; padding: 18px; } .form-grid, .metrics, .analysis-grid, .checklist-item, .dashboard-head, .dashboard-kpis, .dashboard-briefs, .dashboard-memo { grid-template-columns: 1fr; } .table-wrap { overflow-x: auto; } table { min-width: 980px; } .log-item { grid-template-columns: 1fr; } .proxy-row { flex-direction: column; } }
+    .page-jump { position: fixed; right: 18px; bottom: 84px; z-index: 18; display: grid; gap: 8px; padding: 8px; border: 1px solid rgba(23,32,51,.12); border-radius: 18px; background: rgba(255,250,239,.82); box-shadow: 0 18px 42px rgba(23,32,51,.16); backdrop-filter: blur(18px); }
+    .page-jump button { border: 1px solid rgba(23,32,51,.1); border-radius: 12px; padding: 9px 11px; color: var(--ink); background: rgba(255,255,255,.64); font: 900 12px/1 var(--sans); white-space: nowrap; }
+    .page-jump button:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(23,32,51,.12); }
+    .page-jump button:disabled { opacity: .42; cursor: default; transform: none; box-shadow: none; }
+    .analysis-switcher { position: fixed; left: 18px; bottom: 20px; z-index: 19; display: none; grid-template-columns: auto minmax(220px, 360px) auto; gap: 8px; align-items: center; max-width: calc(100vw - 220px); padding: 9px; border: 1px solid rgba(23,32,51,.12); border-radius: 18px; background: rgba(255,250,239,.9); box-shadow: 0 18px 42px rgba(23,32,51,.16); backdrop-filter: blur(18px); }
+    .analysis-switcher.show { display: grid; }
+    .analysis-switcher span { color: var(--muted); font: 900 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+    .analysis-switcher select { min-width: 0; padding: 9px 11px; border-radius: 12px; }
+    .analysis-switcher button { border: 0; border-radius: 12px; padding: 10px 12px; color: #fff; background: linear-gradient(135deg, #1f7a6d, #0f5148); font-weight: 900; white-space: nowrap; }
+    @media (max-width: 1060px) { .hero, .controls, .grid-2, .ai-columns, .diff-grid, .dashboard-grid, .news-grid, .watch-grid, .morning-grid, .focus-list { grid-template-columns: 1fr; } .form-grid, .metrics, .analysis-grid { grid-template-columns: repeat(2, 1fr); } .actions { justify-content: flex-start; } }
+    @media (max-width: 720px) { .shell { width: min(100% - 22px, 1380px); padding-top: 14px; padding-bottom: 154px; } .hero-main, .hero-side, .card { border-radius: 20px; padding: 18px; } .tabs { top: 6px; border-radius: 20px; } .form-grid, .metrics, .analysis-grid, .checklist-item, .dashboard-head, .dashboard-kpis, .dashboard-briefs, .dashboard-memo, .morning-kpis { grid-template-columns: 1fr; } .table-wrap { overflow-x: auto; } table { min-width: 980px; } .log-item { grid-template-columns: 1fr; } .proxy-row { flex-direction: column; } .page-jump { left: 12px; right: 12px; bottom: 12px; grid-template-columns: repeat(3, 1fr); border-radius: 16px; } .page-jump button { padding: 10px 6px; } .analysis-switcher { left: 12px; right: 12px; bottom: 66px; max-width: none; grid-template-columns: 1fr auto; border-radius: 16px; } .analysis-switcher span { display: none; } }
   </style>
 </head>
 <body>
@@ -255,6 +304,7 @@
           <button class="btn ghost" id="clearIrBtn">表示更新</button>
         </div>
       </div>
+      <div id="irStatusDashboard"></div>
       <div id="irContainer"></div>
     </section>
     <section class="panel" id="panel-analysis">
@@ -275,13 +325,10 @@
         <div class="actions" style="justify-content:flex-start;">
           <button class="btn primary" id="copyIrPromptBtn">決算IRプロンプトをコピー</button>
           <button class="btn ghost" id="openPromptIrBtn">選択IRを開く</button>
-          <button class="btn ghost" id="saveIrPromptBtn">Markdown保存</button>
-          <button class="btn danger" id="clearPromptHistoryBtn">履歴削除</button>
           <button class="btn green" id="runAiAnalysisBtn">分析レポートを生成</button>
-          <button class="btn ghost" id="copyAiMemoBtn">ChatGPT用レポートをコピー</button>
-          <button class="btn ghost" id="clearAiAnalysisBtn">レポート削除</button>
+          <button class="btn ghost" id="copyCodexRequestBtn">Codex依頼JSONコピー</button>
         </div>
-        <div class="mini-note">最新の決算短信PDF URLを差し込んだChatGPT用プロンプトを作成できます。アプリ内ではAPIキーを使いません。</div>
+        <div class="mini-note">最新の決算短信PDF URLを差し込んだChatGPT/Codex用プロンプトを作成できます。アプリ内ではAPIキーを使いません。</div>
       </div>
       <div id="analysisContainer"></div>
     </section>
@@ -292,7 +339,7 @@
           <button class="btn primary" id="refreshNewsBtn">ニュース生成</button>
           <button class="btn ghost" id="copyNewsBtn">JSONコピー</button>
         </div>
-        <div class="mini-note">Xは必ずSNS反応・未確認情報として扱い、単独で事実扱いしません。</div>
+        <div class="mini-note">登録済みの日本株を優先します。未登録の場合は大型株リストで生成します。XはSNS反応・未確認情報として扱います。</div>
       </div>
       <div id="newsContainer"></div>
     </section>
@@ -311,11 +358,22 @@
       </div>
       <div class="grid-2">
         <div class="card"><div class="card-title">使い方</div><div class="signals"><div class="signal good">1. start-kabu-lab.bat を起動すると、ローカルプロキシとこの画面が開きます。</div><div class="signal good">2. 銘柄を追加し、「価格/分析更新」で株価・テクニカル指標を取得します。</div><div class="signal good">3. 日本株は「IR一括更新」でTDnetの直近31日分を銘柄コード別に取得できます。</div></div></div>
-        <div class="card"><div class="card-title">データについて</div><div class="signals"><div class="signal">価格、PER/PBR/EPS、決算発表予定日はYahoo Finance系エンドポイントから取得します。</div><div class="signal">IRはTDnet公開ページの直近31日分を対象にします。初期版ではXBRL全文解析ではなく、決算関連IRの抽出と基本指標分析を行います。</div><div class="signal bad">投資判断の最終確認は、必ず各IR PDFや公式情報で行ってください。</div></div></div>
+        <div class="card"><div class="card-title">データについて</div><div class="signals"><div class="signal">次回決算予定日はJPX公式の決算発表予定日Excelから取得します。JPX未掲載の銘柄は未設定のままです。</div><div class="signal">価格、PER/PBR/EPS、チャートはYahoo Finance系エンドポイントを使います。取得元の都合で遅延・欠損する場合があります。</div><div class="signal">IRはTDnet公開ページの直近31日分を主対象にします。初期版ではXBRL全文解析ではなく、決算関連IRの抽出と基本指標分析を行います。</div><div class="signal bad">投資判断の最終確認は、必ず各IR PDFや公式情報で行ってください。</div></div></div>
+        <div class="card"><div class="card-title">保存とセキュリティ</div><div class="signals"><div class="signal warn">保有銘柄、メモ、AI回答メモはこのブラウザのlocalStorageに平文保存されます。共用PCでは注意してください。</div><div class="signal good">プロキシは127.0.0.1限定です。外部公開や任意URL転送は行いません。</div><div class="signal">より保守的に使う場合は、プロキシを -StrictSources 付きで起動するとYahoo Japanページ等のHTML補完を使いません。</div><div class="signal">バックアップはJSON出力で保存できます。不要になったローカル保存データは下のボタンで削除できます。</div></div><div class="actions" style="justify-content:flex-start; margin-top:12px;"><button class="btn danger" id="clearLocalDataBtn">ローカル保存データ削除</button></div></div>
       </div>
     </section>
   </div>
   <div class="toast" id="toast"></div>
+  <div class="page-jump" aria-label="ページ移動">
+    <button type="button" id="jumpTopBtn">上へ</button>
+    <button type="button" id="jumpPanelBtn">タブ先頭</button>
+    <button type="button" id="jumpBottomBtn">下へ</button>
+  </div>
+  <div class="analysis-switcher" id="analysisQuickSwitcher" aria-label="分析対象の固定切替">
+    <span>Analysis</span>
+    <select id="analysisQuickSelect" aria-label="分析対象を切り替え"></select>
+    <button type="button" id="analysisQuickUpdateBtn">更新</button>
+  </div>
   <script>
     const STORAGE_STOCKS = 'kabu_lab_stocks_v1';
     const STORAGE_LOG = 'kabu_lab_alert_log_v1';
@@ -341,6 +399,7 @@
     let portfolioFilter = localStorage.getItem(STORAGE_PORTFOLIO_FILTER) || 'all';
     let refreshAllRunning = false;
     let refreshIrRunning = false;
+    let irStatusExpanded = false;
     let morningNews = null;
     let morningNewsLoading = false;
 
@@ -397,6 +456,9 @@
       stock.isHolding = !!stock.isHolding;
       stock.isFavorite = !!stock.isFavorite;
       stock.irItems = Array.isArray(stock.irItems) ? stock.irItems.map(normalizeIrItem) : [];
+      stock.irStatus = stock.irStatus && typeof stock.irStatus === 'object' ? stock.irStatus : {};
+      stock.irFetchedAt = stock.irFetchedAt || '';
+      stock.irError = stock.irError || null;
       stock.chartPoints = Array.isArray(stock.chartPoints) ? stock.chartPoints : [];
       stock.fundamentals = stock.fundamentals || {};
       stock.aiAnalysis = stock.aiAnalysis || null;
@@ -498,6 +560,64 @@
       showToast.timer = window.setTimeout(() => el.classList.remove('show'), 3600);
     }
 
+    function scrollToY(top) {
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      window.setTimeout(updatePageJumpState, 220);
+    }
+
+    function scrollToPageTop() {
+      scrollToY(0);
+    }
+
+    function scrollToActivePanelTop() {
+      const target = document.querySelector('.panel.active') || document.querySelector('.tabs') || document.body;
+      const offset = window.innerWidth <= 720 ? 84 : 76;
+      const top = target.getBoundingClientRect().top + window.scrollY - offset;
+      scrollToY(top);
+    }
+
+    function scrollToPageBottom() {
+      scrollToY(document.documentElement.scrollHeight);
+    }
+
+    function updatePageJumpState() {
+      const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      if ($('jumpTopBtn')) $('jumpTopBtn').disabled = window.scrollY < 20;
+      if ($('jumpBottomBtn')) $('jumpBottomBtn').disabled = window.scrollY > max - 20;
+    }
+
+    function isAnalysisTabActive() {
+      return document.querySelector('.tab.active')?.dataset.tab === 'analysis';
+    }
+
+    function updateAnalysisQuickSwitcher() {
+      const switcher = $('analysisQuickSwitcher');
+      if (!switcher) return;
+      switcher.classList.toggle('show', isAnalysisTabActive() && stocks.length > 0);
+    }
+
+    function syncAnalysisQuickSelect() {
+      const quick = $('analysisQuickSelect');
+      const main = $('analysisStockSelect');
+      if (!quick || !main) return;
+      const options = main.innerHTML || '<option value="">銘柄がありません</option>';
+      const current = main.value || stocks[0]?.id || '';
+      quick.innerHTML = options;
+      quick.value = String(current);
+      updateAnalysisQuickSwitcher();
+    }
+
+    function setAnalysisStock(id, options = {}) {
+      const main = $('analysisStockSelect');
+      const quick = $('analysisQuickSelect');
+      if (!main || !id) return;
+      main.value = String(id);
+      if (quick) quick.value = String(id);
+      renderPromptControls();
+      renderAnalysis();
+      if (!options.keepScroll) scrollToActivePanelTop();
+    }
+
     async function copyText(text) {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
@@ -534,7 +654,8 @@
       setProxyBase($('proxyInput').value);
       try {
         const data = await apiGet('/health', 2500);
-        $('connectionStatus').textContent = `接続OK: ${getProxyBase()} / v${data.version || 'unknown'} / ${formatDateTime(data.time)}`;
+        const strict = data.strictSources ? ' / strict' : '';
+        $('connectionStatus').textContent = `接続OK: ${getProxyBase()} / v${data.version || 'unknown'}${strict} / ${formatDateTime(data.time)}`;
         showToast('ローカルプロキシに接続しました', 'success');
         return true;
       } catch (error) {
@@ -546,6 +667,14 @@
 
     function setLastRun(text) {
       $('lastRunText').textContent = `最終更新: ${text} / ${new Date().toLocaleTimeString('ja-JP')}`;
+    }
+
+    function rememberIrStatus(stock, patch) {
+      stock.irStatus = {
+        ...(stock.irStatus || {}),
+        ...patch,
+        updatedAt: new Date().toISOString()
+      };
     }
 
     function addLog(entry) {
@@ -687,22 +816,43 @@
       normalizeStock(stock);
       if (stock.market !== 'JP') {
         stock.irError = 'TDnet IR取得は日本株のみ対応です';
+        rememberIrStatus(stock, { state: 'unsupported', source: 'TDnet', error: stock.irError, count: 0, days: IR_DAYS });
         return [];
       }
       const oldIds = new Set((stock.irItems || []).map((item) => item.id));
       const hadFetched = !!stock.irFetchedAt;
-      const data = await apiGet(`/tdnet/ir?code=${encodeURIComponent(stock.code)}&days=${IR_DAYS}`, 52000);
-      const items = Array.isArray(data.items) ? data.items.map(normalizeIrItem) : [];
-      stock.irItems = items;
-      stock.irFetchedAt = data.fetchedAt || new Date().toISOString();
-      stock.irError = null;
-      applyNameFromIr(stock, items);
-      const newItems = items.filter((item) => !oldIds.has(item.id));
-      if (hadFetched && newItems.length && !options.silent) {
-        addLog({ type: 'ir', code: stock.code, name: stock.name, message: `新着IR ${newItems.length}件: ${newItems[0].title}`, level: 'info' });
-        showToast(`${stock.code} 新着IR ${newItems.length}件`, 'success');
+      const route = `/tdnet/ir?code=${encodeURIComponent(stock.code)}&days=${IR_DAYS}`;
+      rememberIrStatus(stock, { state: 'running', source: 'TDnet', route, startedAt: new Date().toISOString(), error: null, days: IR_DAYS });
+      try {
+        const data = await apiGet(route, 52000);
+        const items = Array.isArray(data.items) ? data.items.map(normalizeIrItem) : [];
+        stock.irItems = items;
+        stock.irFetchedAt = data.fetchedAt || new Date().toISOString();
+        stock.irError = null;
+        applyNameFromIr(stock, items);
+        const newItems = items.filter((item) => !oldIds.has(item.id));
+        rememberIrStatus(stock, {
+          state: 'ok',
+          source: data.source || 'TDnet',
+          route,
+          fetchedAt: stock.irFetchedAt,
+          count: items.length,
+          newCount: newItems.length,
+          latestTitle: items[0]?.title || '',
+          latestDate: items[0]?.date || '',
+          error: null,
+          days: data.days || IR_DAYS
+        });
+        if (hadFetched && newItems.length && !options.silent) {
+          addLog({ type: 'ir', code: stock.code, name: stock.name, message: `新着IR ${newItems.length}件: ${newItems[0].title}`, level: 'info' });
+          showToast(`${stock.code} 新着IR ${newItems.length}件`, 'success');
+        }
+        return items;
+      } catch (error) {
+        stock.irError = error.message;
+        rememberIrStatus(stock, { state: 'error', source: 'TDnet', route, error: error.message, failedAt: new Date().toISOString(), days: IR_DAYS, count: (stock.irItems || []).length });
+        throw error;
       }
-      return items;
     }
 
     async function refreshStock(stock, options = {}) {
@@ -819,6 +969,7 @@
       const lines = [];
       const tests = [
         { label: 'proxy', path: '/health', timeout: 3000 },
+        { label: 'JPX earnings 1333', path: '/jpx/earnings?code=1333', timeout: 60000 },
         { label: 'name 7203', path: '/name?code=7203&market=JP', timeout: 20000 },
         { label: 'chart 7203.T', path: '/yahoo/chart?symbol=7203.T&range=1y&interval=1d', timeout: 45000 },
         { label: 'quote 7203.T', path: '/yahoo/quote?symbol=7203.T', timeout: 30000 },
@@ -841,6 +992,8 @@
             lines.push(`${test.label}: OK (${count}件)`);
           } else if (test.label.startsWith('IR')) {
             lines.push(`${test.label}: OK (${data.count ?? 0}件)`);
+          } else if (test.label.startsWith('JPX')) {
+            lines.push(`${test.label}: OK (${data.date || data.latestKnownDate || '予定日なし'} / files ${data.sourceFileCount ?? '?'})`);
           } else {
             lines.push(`${test.label}: OK (v${data.version || 'unknown'})`);
           }
@@ -1138,6 +1291,9 @@
     }
 
     function promptTemplateLabel(type) {
+      if (type === 'codex') return 'Codex分析';
+      if (type === 'imported') return '外部AI回答';
+      if (type === 'local') return 'ローカル分析';
       return type === 'material'
         ? '決算説明資料分析'
         : type === 'forecast'
@@ -1581,6 +1737,72 @@
       ].join('\n');
     }
 
+    function buildCodexAiAnalysisRequest(stock) {
+      const payload = buildAiStockPayload(stock);
+      const selected = getSelectedPromptIr(stock);
+      const templateChoice = $('promptTemplateSelect')?.value || stock.promptTemplate || 'auto';
+      const template = selected ? (templateChoice === 'auto' ? inferPromptTemplate(selected) : templateChoice) : 'earnings';
+      const localAnalysis = stock.aiAnalysis || buildLocalAnalysis(stock);
+      return {
+        type: 'kabu_lab_ai_analysis_request',
+        version: 1,
+        generatedAt: new Date().toISOString(),
+        app: 'KABU LAB',
+        instructions: [
+          'あなたは辛口の機関投資家向け株式アナリストです。',
+          'stock、selectedIr、localAnalysis、promptを読み、決算重視で日本語の投資分析レポートを作成してください。',
+          '事実、推測、未取得データを分け、Bull CaseとBear Caseを公平に提示してください。',
+          '可能なら responseFormat と同じJSONだけを返してください。Markdownで返す場合もKABU LABに読み込めます。'
+        ],
+        responseFormat: {
+          type: 'kabu_lab_ai_analysis_response',
+          code: payload.code,
+          name: payload.name,
+          generatedAt: 'ISO-8601',
+          model: 'Codex / ChatGPT',
+          summary: '総評を2-5文で記載',
+          stance: '積極買い / 買い / 中立 / 様子見 / 売り / 未判定',
+          stance_reason: '投資スタンスの理由',
+          confidence: '低 / 中 / 高',
+          sections: [
+            { title: '1. 事業概要', items: ['具体的な根拠つき箇条書き'] },
+            { title: '2. 財務健全性', items: ['具体的な根拠つき箇条書き'] },
+            { title: '3. 競争力と業界ポジション', items: ['具体的な根拠つき箇条書き'] },
+            { title: '4. バリュエーション', items: ['具体的な根拠つき箇条書き'] },
+            { title: '5. マクロ・外部環境とリスク', items: ['具体的な根拠つき箇条書き'] },
+            { title: '6. 総合評価と投資判断', items: ['具体的な根拠つき箇条書き'] }
+          ],
+          bull_case: ['強気材料'],
+          bear_case: ['弱気材料'],
+          facts: ['確認できた事実'],
+          risks: ['主要リスク'],
+          ir_focus: ['IRで注目する点'],
+          technical_view: 'テクニカル所見',
+          key_indicators: ['次回決算で見るKPI'],
+          data_sources: ['参照したデータソース'],
+          unknowns: ['未取得または要確認のデータ'],
+          disclaimer: 'これは投資助言ではなく分析材料です。',
+          markdown: '任意。全文レポートをMarkdownで入れてもよい'
+        },
+        stock: payload,
+        selectedIr: selected ? {
+          id: irItemKey(selected),
+          date: selected.date || '',
+          time: selected.time || '',
+          category: selected.category || '',
+          title: selected.title || '',
+          url: safeIrUrl(selected.url),
+          template,
+          templateLabel: promptTemplateLabel(template)
+        } : null,
+        prompt: {
+          comprehensiveReport: buildChatGptMemoText(stock),
+          selectedIrAnalysis: selected ? buildEarningsIrPrompt(stock, selected, template) : ''
+        },
+        localAnalysis
+      };
+    }
+
     function companyNameForPrompt(stock) {
       const name = cleanCompanyName(stock?.name || stock?.code || '');
       return name || stock?.code || '未取得';
@@ -1792,7 +2014,7 @@
         : '<div class="empty" style="padding:22px;"><strong>保存済みAI回答はまだありません</strong>ChatGPT Webの回答を貼り付けて保存できます。</div>';
       return `<div class="card" style="margin-top:16px;">
         <div class="card-title"><span>ChatGPT回答メモ</span><span class="subtle">${notes.length} notes</span></div>
-        <div class="signal info">対象: ${escapeHtml(currentIr)}。ChatGPT Webの回答をここに貼り付けると、銘柄ごとの分析履歴として保存できます。</div>
+        <div class="signal info">対象: ${escapeHtml(currentIr)}。Codex/ChatGPTの回答JSONまたはMarkdownをここに貼り付けて保存すると、分析履歴と投資分析レポートに反映できます。</div>
         <div class="field" style="margin-top:12px;"><label for="aiResponseNoteInput">AI Response</label><textarea class="memo-input" id="aiResponseNoteInput" placeholder="ChatGPTの分析結果をここに貼り付け" oninput="saveAiResponseDraft(this.value)">${escapeHtml(stock.aiResponseDraft || '')}</textarea></div>
         <div class="actions" style="justify-content:flex-start; margin-top:10px;">
           <button class="btn primary" onclick="saveAiResponseNote()">回答を保存</button>
@@ -1813,6 +2035,19 @@
       if (diff === 0) return '本日';
       if (diff > 0) return `${diff}日後`;
       return `${Math.abs(diff)}日前`;
+    }
+
+    function irCategoryClass(item) {
+      const text = `${item?.category || ''} ${item?.title || ''}`;
+      if (/下方修正|減額|減配|無配/.test(text)) return 'hit';
+      if (/上方修正|増額|増配|自己株式|自社株/.test(text)) return 'good';
+      if (/決算|Financial Results|Summary of Financial/i.test(text)) return 'info';
+      if (/業績予想|修正|配当|還元/.test(text)) return 'warn';
+      return '';
+    }
+
+    function renderIrCategoryBadge(item) {
+      return `<span class="chip ${irCategoryClass(item)}">${escapeHtml(item?.category || 'その他')}</span>`;
     }
 
     function earningsDisplay(stock) {
@@ -1842,7 +2077,7 @@
       const event = stock.earningsEvent || {};
       const earnings = earningsDisplay(stock);
       const status = event.status || '未確認';
-      const statusOptions = ['未確認', '決算前', '発表済み', '分析中', '分析完了', '要フォロー']
+      const statusOptions = ['未確認', '決算前', '発表済み', '分析中', '確認済み', '分析完了', '要フォロー']
         .map((value) => `<option value="${escapeHtml(value)}" ${status === value ? 'selected' : ''}>${escapeHtml(value)}</option>`)
         .join('');
       const sourceLink = event.autoNextDateSourceUrl
@@ -2039,6 +2274,7 @@
       renderMetrics();
       renderPortfolio();
       renderSelects();
+      renderIrStatusDashboard();
       renderIr();
       renderAnalysis();
       renderMorningNews();
@@ -2140,6 +2376,371 @@
       return score;
     }
 
+    function latestEarningsIr(stock) {
+      return (stock.irItems || []).find((item) => item.category === '決算' || isEarningsIr(item)) || null;
+    }
+
+    function latestEarningsEventDate(stock) {
+      const event = stock.earningsEvent || {};
+      const candidates = [
+        event.lastDate,
+        event.latestKnownDate,
+        latestEarningsIr(stock)?.date
+      ].filter((value) => parseDateLike(value));
+      if (!candidates.length) return '';
+      return candidates.sort((a, b) => parseDateLike(b) - parseDateLike(a))[0];
+    }
+
+    function hasAiNoteAfterDate(stock, dateText) {
+      const eventDate = parseDateLike(dateText);
+      if (!eventDate) return false;
+      const eventStart = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate()).getTime();
+      return (stock.aiResponseNotes || []).some((note) => {
+        const created = parseDateLike(note.createdAt);
+        return created && created.getTime() >= eventStart;
+      });
+    }
+
+    function uncheckedChecklistLabels(stock, limit = 3) {
+      const checklist = stock.analysisChecklist || {};
+      return CHECKLIST_ITEMS
+        .filter((item) => !checklist[item.key]?.checked)
+        .map((item) => item.label)
+        .slice(0, limit);
+    }
+
+    function earningsReviewState(stock) {
+      const eventDate = latestEarningsEventDate(stock);
+      const daysAfter = eventDate ? ageDays(eventDate) : null;
+      const checklist = checklistStats(stock);
+      const noteSaved = eventDate ? hasAiNoteAfterDate(stock, eventDate) : false;
+      const latestIr = latestEarningsIr(stock);
+      const status = stock.earningsEvent?.status || '未確認';
+      const reviewedAt = stock.earningsEvent?.reviewedAt || '';
+      const manuallyReviewed = !!(eventDate && reviewedAt && new Date(reviewedAt) >= new Date(`${eventDate}T00:00:00`));
+      const statusDone = ['確認済み', '分析完了', '要フォロー'].includes(status) || manuallyReviewed;
+      const missing = [];
+      if (!manuallyReviewed) {
+        if (!latestIr) missing.push('決算IR');
+        if (checklist.pct < 80) missing.push(`チェック${checklist.completed}/${checklist.total}`);
+        if (!noteSaved) missing.push('AI回答メモ');
+        if (!statusDone) missing.push(`状態:${status}`);
+      }
+      return {
+        eventDate,
+        daysAfter,
+        checklist,
+        noteSaved,
+        latestIr,
+        status,
+        statusDone,
+        missing,
+        needsReview: daysAfter != null && daysAfter >= 0 && daysAfter <= 14 && missing.length > 0
+      };
+    }
+
+    function watchActionText(type, stock, review) {
+      const missingLabels = uncheckedChecklistLabels(stock, 3);
+      if (type === 'post') {
+        return review.missing.length
+          ? `未完了: ${review.missing.join(' / ')}${missingLabels.length ? `。優先確認: ${missingLabels.join('、')}` : ''}`
+          : '決算後チェックは概ね完了しています。Watchメモだけ最新化してください。';
+      }
+      if (type === 'urgent') {
+        return `本日/明日の決算です。事前論点、通期予想、前回決算の懸念を確認してください。`;
+      }
+      if (type === 'week') {
+        return `7日以内の決算です。Watchメモと未チェック項目${missingLabels.length ? `（${missingLabels.join('、')}）` : ''}を先に埋めてください。`;
+      }
+      if (type === 'twoWeeks') {
+        return `14日以内の決算です。IR更新と前回論点の整理を始めるタイミングです。`;
+      }
+      return 'JPX予定表で次回日が未取得です。公式情報を確認し、分かれば手入力してください。';
+    }
+
+    function buildEarningsWatchBuckets(list) {
+      const buckets = {
+        urgent: [],
+        week: [],
+        twoWeeks: [],
+        post: [],
+        noDate: []
+      };
+      for (const stock of list) {
+        const earnings = earningsDisplay(stock);
+        const review = earningsReviewState(stock);
+        const days = earnings.days;
+        if (days != null && days >= 0 && days <= 1) {
+          buckets.urgent.push({ type: 'urgent', stock, earnings, review, sort: days });
+        } else if (days != null && days >= 0 && days <= 7) {
+          buckets.week.push({ type: 'week', stock, earnings, review, sort: days });
+        } else if (days != null && days >= 0 && days <= 14) {
+          buckets.twoWeeks.push({ type: 'twoWeeks', stock, earnings, review, sort: days });
+        } else if (review.needsReview) {
+          buckets.post.push({ type: 'post', stock, earnings, review, sort: review.daysAfter ?? 999 });
+        } else if (stock.market === 'JP' && !earnings.date) {
+          buckets.noDate.push({ type: 'noDate', stock, earnings, review, sort: stock.isHolding ? 0 : stock.isFavorite ? 1 : 2 });
+        }
+      }
+      for (const key of Object.keys(buckets)) {
+        buckets[key].sort((a, b) => a.sort - b.sort || portfolioGroupPriority(b.stock) - portfolioGroupPriority(a.stock));
+      }
+      return buckets;
+    }
+
+    function renderWatchItem(item) {
+      const { stock, earnings, review, type } = item;
+      const dateText = type === 'post' ? review.eventDate : earnings.date;
+      const timing = type === 'post'
+        ? `${review.daysAfter}日前`
+        : (earnings.daysText || '未設定');
+      const label = type === 'post'
+        ? '決算後'
+        : type === 'noDate'
+          ? '日付未取得'
+          : '決算前';
+      return `<div class="watch-item">
+        <div class="watch-item-head">
+          <div class="watch-item-title"><span class="ticker">${escapeHtml(stock.code)}</span></div>
+          <span class="chip ${type === 'post' ? 'warn' : type === 'urgent' ? 'hit' : earnings.className}">${escapeHtml(timing)}</span>
+        </div>
+        <div class="watch-item-name">${escapeHtml(stock.name || stock.code)}</div>
+        <div class="chip-row">${ownershipChips(stock)}<span class="chip">${escapeHtml(label)}</span><span class="chip">${escapeHtml(dateText || '未設定')}</span></div>
+        <div class="watch-action">${escapeHtml(watchActionText(type, stock, review))}</div>
+        <div class="actions" style="justify-content:flex-start; margin-top:9px;">
+          <button class="btn small primary" onclick="focusAnalysis('${escapeJsArg(stock.id)}')">分析</button>
+          <button class="btn small ghost" onclick="focusIr('${escapeJsArg(stock.id)}')">IR</button>
+          <button class="btn small green" onclick="refreshOne('${escapeJsArg(stock.id)}')">更新</button>
+          <button class="btn small ghost" onclick="markEarningsReviewed('${escapeJsArg(stock.id)}')">確認済み</button>
+        </div>
+      </div>`;
+    }
+
+    function renderWatchLane(title, subtitle, items, className, emptyText) {
+      const visible = items.slice(0, 6);
+      const body = visible.length
+        ? `<div class="watch-list">${visible.map(renderWatchItem).join('')}</div>`
+        : `<div class="subtle">${escapeHtml(emptyText)}</div>`;
+      const more = items.length > visible.length ? `<div class="mini-note">ほか ${items.length - visible.length} 件あります。</div>` : '';
+      return `<section class="watch-lane ${className}">
+        <div class="watch-lane-title"><span>${escapeHtml(title)}</span><span class="chip">${items.length}</span></div>
+        <div class="subtle" style="margin-bottom:10px;">${escapeHtml(subtitle)}</div>
+        ${body}${more}
+      </section>`;
+    }
+
+    function renderEarningsFocusMode(buckets) {
+      const focusItems = [
+        ...buckets.urgent,
+        ...buckets.week,
+        ...buckets.post,
+        ...buckets.twoWeeks
+      ].slice(0, 6);
+      if (!focusItems.length) return '';
+      const cards = focusItems.map((item) => {
+        const { stock, earnings, review, type } = item;
+        const timing = type === 'post' ? `${review.daysAfter}日前` : (earnings.daysText || '未設定');
+        const reason = type === 'post' ? '決算後要確認' : type === 'urgent' ? '最優先' : type === 'week' ? '7日以内' : '14日以内';
+        const dateText = type === 'post' ? review.eventDate : earnings.date;
+        return `<article class="focus-item">
+          <div class="focus-item-title"><span class="ticker">${escapeHtml(stock.code)}</span> <span class="chip ${type === 'urgent' ? 'hit' : type === 'post' ? 'warn' : earnings.className}">${escapeHtml(timing)}</span></div>
+          <div class="focus-item-name">${escapeHtml(stock.name || stock.code)}</div>
+          <div class="chip-row" style="margin-top:8px;"><span class="chip ${type === 'post' ? 'warn' : 'info'}">${escapeHtml(reason)}</span><span class="chip">${escapeHtml(dateText || '未設定')}</span></div>
+          <div class="watch-action">${escapeHtml(watchActionText(type, stock, review))}</div>
+          <div class="actions" style="justify-content:flex-start; margin-top:9px;">
+            <button class="btn small primary" onclick="focusAnalysis('${escapeJsArg(stock.id)}')">分析</button>
+            <button class="btn small ghost" onclick="focusIr('${escapeJsArg(stock.id)}')">IR</button>
+            <button class="btn small ghost" onclick="markEarningsReviewed('${escapeJsArg(stock.id)}')">確認済み</button>
+          </div>
+        </article>`;
+      }).join('');
+      return `<div class="card" style="margin-bottom:14px;">
+        <div class="card-title"><span>決算集中モード</span><span class="subtle">${focusItems.length} priority</span></div>
+        <div class="focus-list">${cards}</div>
+        <div class="mini-note">本日/明日、7日以内、決算後要確認を優先して大きく表示しています。</div>
+      </div>`;
+    }
+
+    function renderEarningsWatchlist(list = stocks) {
+      const buckets = buildEarningsWatchBuckets(list);
+      const total = buckets.urgent.length + buckets.week.length + buckets.twoWeeks.length + buckets.post.length + buckets.noDate.length;
+      return `${renderEarningsFocusMode(buckets)}<div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><span>決算ウォッチリスト</span><span class="subtle">${total} action items</span></div>
+        <div class="watch-grid">
+          ${renderWatchLane('本日/明日', '最優先で事前確認', buckets.urgent, 'bad', '本日/明日の決算予定はありません。')}
+          ${renderWatchLane('7日以内', 'Watchメモを先に埋める', buckets.week, 'good', '7日以内の決算予定はありません。')}
+          ${renderWatchLane('14日以内', '前回論点を整理する', buckets.twoWeeks, 'info', '14日以内の決算予定はありません。')}
+          ${renderWatchLane('決算後要確認', '発表後14日以内で未確認あり', buckets.post, 'warn', '決算後の未確認銘柄はありません。')}
+        </div>
+        ${buckets.noDate.length ? `<div class="mini-note">次回決算日が未取得の日本株: ${buckets.noDate.slice(0, 8).map((item) => escapeHtml(`${item.stock.code} ${item.stock.name || ''}`.trim())).join('、')}${buckets.noDate.length > 8 ? `、ほか${buckets.noDate.length - 8}件` : ''}。必要なら公式情報を見て手入力してください。</div>` : '<div class="mini-note">決算予定日、チェックリスト、AI回答メモ、保有/お気に入り状態から自動整理しています。</div>'}
+      </div>`;
+    }
+
+    function addMorningReason(reasons, label, cls = '') {
+      if (!reasons.some((reason) => reason.label === label)) reasons.push({ label, cls });
+    }
+
+    function morningActionText(item) {
+      const { stock, earnings, review, flags } = item;
+      if (stock.error) return '価格取得エラーがあります。まず「更新」で株価と基本指標を取り直してください。';
+      if (review.needsReview) return `決算後チェックが未完了です。${review.missing.join(' / ')}を埋めて、ステータスを更新してください。`;
+      if (earnings.days != null && earnings.days >= 0 && earnings.days <= 1) return '本日/明日の決算です。前回論点、通期予想、Watchメモを先に確認してください。';
+      if (earnings.days != null && earnings.days >= 0 && earnings.days <= 7) return '7日以内の決算です。決算IRプロンプト準備とチェックリストの未完了項目を先に潰してください。';
+      if (flags.noEarningsDate) return '次回決算予定日が未取得です。価格/分析更新でJPX予定表を再確認し、必要なら手入力してください。';
+      if (flags.stalePrice || flags.staleIr) return 'データが古くなっています。朝の確認前に価格/分析更新とIR一括更新をかけるのが安全です。';
+      if (stock.isHolding) return '保有銘柄の定点観測です。価格、最新IR、Bull/Bear/Watchメモだけ30秒で確認してください。';
+      return '気になる銘柄の定点観測です。決算予定と最新IRだけ軽く確認してください。';
+    }
+
+    function buildMorningBrief(list = stocks) {
+      const source = Array.isArray(list) ? list : stocks;
+      const stats = {
+        holdings: source.filter((stock) => stock.isHolding).length,
+        today: 0,
+        week: 0,
+        stale: 0
+      };
+      const items = [];
+      for (const stock of source) {
+        const earnings = earningsDisplay(stock);
+        const review = earningsReviewState(stock);
+        const latestIr = (stock.irItems || [])[0];
+        const latestNote = (stock.aiResponseNotes || [])[0];
+        const checklist = checklistStats(stock);
+        const quoteAge = ageDays(stock.quoteFetchedAt || stock.chartFetchedAt);
+        const irAge = latestIr ? ageDays(latestIr.date) : null;
+        const reasons = [];
+        const flags = {
+          stalePrice: quoteAge == null || quoteAge > 1,
+          staleIr: stock.market === 'JP' && (!latestIr || irAge == null || irAge > 14),
+          noEarningsDate: stock.market === 'JP' && !earnings.date
+        };
+        if (flags.stalePrice || flags.staleIr) stats.stale++;
+        let score = portfolioGroupPriority(stock);
+        let level = stock.isHolding ? 'good' : stock.isFavorite ? 'info' : '';
+
+        if (earnings.days != null && earnings.days >= 0 && earnings.days <= 1) {
+          stats.today++;
+          stats.week++;
+          score += 100;
+          level = 'hit';
+          addMorningReason(reasons, '本日/明日決算', 'hit');
+        } else if (earnings.days != null && earnings.days >= 0 && earnings.days <= 7) {
+          stats.week++;
+          score += 78;
+          if (level !== 'hit') level = 'good';
+          addMorningReason(reasons, '7日以内決算', 'good');
+        } else if (earnings.days != null && earnings.days >= 0 && earnings.days <= 14) {
+          score += 42;
+          if (!level) level = 'info';
+          addMorningReason(reasons, '14日以内決算', 'info');
+        }
+
+        if (review.needsReview) {
+          score += 88;
+          if (level !== 'hit') level = 'warn';
+          addMorningReason(reasons, '決算後要確認', 'warn');
+        }
+        if (stock.error) {
+          score += 70;
+          level = 'hit';
+          addMorningReason(reasons, '取得エラー', 'hit');
+        } else if (stock.warning) {
+          score += 28;
+          if (!level) level = 'warn';
+          addMorningReason(reasons, '指標注意', 'warn');
+        }
+        if (flags.stalePrice) {
+          score += stock.isHolding ? 36 : 18;
+          if (!level) level = 'warn';
+          addMorningReason(reasons, quoteAge == null ? '価格未取得' : `価格${quoteAge}日前`, 'warn');
+        }
+        if (flags.staleIr) {
+          score += stock.isHolding ? 30 : 14;
+          if (!level) level = 'warn';
+          addMorningReason(reasons, latestIr ? `IR${irAge}日前` : 'IR未取得', 'warn');
+        }
+        if (flags.noEarningsDate) {
+          score += stock.isHolding ? 26 : 12;
+          if (!level) level = 'warn';
+          addMorningReason(reasons, '決算日未取得', 'warn');
+        }
+        if ((review.needsReview || (earnings.days != null && earnings.days >= 0 && earnings.days <= 14)) && checklist.pct < 80) {
+          score += 20;
+          addMorningReason(reasons, `チェック${checklist.completed}/${checklist.total}`, 'warn');
+        }
+        if ((review.needsReview || (earnings.days != null && earnings.days >= 0 && earnings.days <= 7)) && !latestNote) {
+          score += 12;
+          addMorningReason(reasons, 'AIメモ未保存', 'warn');
+        }
+        if (stock.isHolding) addMorningReason(reasons, '保有', 'good');
+        else if (stock.isFavorite) addMorningReason(reasons, 'お気に入り', 'info');
+
+        if (score > 0 && (reasons.length || stock.isHolding || stock.isFavorite)) {
+          const item = { stock, earnings, review, latestIr, checklist, reasons, flags, score, level: level || 'info' };
+          item.action = morningActionText(item);
+          items.push(item);
+        }
+      }
+      items.sort((a, b) => b.score - a.score || String(a.stock.code).localeCompare(String(b.stock.code)));
+      return { stats, total: items.length, items: items.slice(0, 8) };
+    }
+
+    function renderMorningItem(item) {
+      const { stock, earnings, latestIr, reasons } = item;
+      const changePct = stock.price != null && stock.prevClose ? ((stock.price - stock.prevClose) / stock.prevClose) * 100 : null;
+      const reasonChips = reasons.slice(0, 5).map((reason) => `<span class="chip ${reason.cls}">${escapeHtml(reason.label)}</span>`).join('');
+      const latestIrText = latestIr ? `${latestIr.date || ''} ${latestIr.category || 'IR'}`.trim() : 'IR未取得';
+      return `<article class="morning-item ${escapeHtml(item.level)}">
+        <div class="morning-item-head">
+          <div class="morning-item-title">
+            <span class="ticker">${escapeHtml(stock.code)}</span>
+            <div class="name">${escapeHtml(stock.name || stock.code)}</div>
+          </div>
+          <span class="chip ${earnings.className}">${escapeHtml(earnings.daysText || '決算未設定')}</span>
+        </div>
+        <div class="chip-row">${reasonChips}</div>
+        <div class="morning-action">${escapeHtml(item.action)}</div>
+        <div class="subtle" style="margin-top:8px;">現在値: ${escapeHtml(formatPrice(stock.price, stock))} / ${escapeHtml(formatPct(changePct))} / 最新IR: ${escapeHtml(latestIrText)}</div>
+        <div class="actions" style="justify-content:flex-start; margin-top:10px;">
+          <button class="btn small green" onclick="refreshOne('${escapeJsArg(stock.id)}')">更新</button>
+          <button class="btn small primary" onclick="focusAnalysis('${escapeJsArg(stock.id)}')">分析</button>
+          <button class="btn small ghost" onclick="focusIr('${escapeJsArg(stock.id)}')">IR</button>
+        </div>
+      </article>`;
+    }
+
+    function renderMorningBrief(list = stocks) {
+      const brief = buildMorningBrief(list);
+      const body = brief.items.length
+        ? `<div class="morning-list">${brief.items.map(renderMorningItem).join('')}</div>`
+        : '<div class="empty" style="border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:rgba(255,255,255,.72);"><strong style="color:#fff;">朝チェック対象はありません</strong>保有銘柄やお気に入りを設定すると、ここに優先表示されます。</div>';
+      return `<div class="card morning-card" style="margin-bottom:16px;">
+        <div class="card-title"><span>朝チェック</span><span class="subtle">holdings / earnings / stale data</span></div>
+        <div class="morning-grid">
+          <div>
+            <div class="morning-kpis">
+              <div class="morning-kpi"><span>Holdings</span><strong>${brief.stats.holdings}</strong></div>
+              <div class="morning-kpi"><span>Today</span><strong>${brief.stats.today}</strong></div>
+              <div class="morning-kpi"><span>7D Earnings</span><strong>${brief.stats.week}</strong></div>
+              <div class="morning-kpi"><span>Stale Data</span><strong>${brief.stats.stale}</strong></div>
+            </div>
+            <div class="mini-note">保有銘柄、決算前後、取得エラー、古い価格/IRを全銘柄から抽出します。毎朝ここだけ見れば、優先順位を迷いにくくなります。</div>
+            <div class="actions" style="justify-content:flex-start; margin-top:12px;">
+              <button class="btn small primary" onclick="refreshAll()">価格/分析更新</button>
+              <button class="btn small green" onclick="refreshAllIr()">IR一括更新</button>
+              <button class="btn small ghost" onclick="setPortfolioFilter('holding')">保有だけ表示</button>
+              <button class="btn small ghost" onclick="switchTab('news')">朝ニュースへ</button>
+            </div>
+          </div>
+          <div>
+            ${body}
+            ${brief.total > brief.items.length ? `<div class="mini-note">ほか ${brief.total - brief.items.length} 件の確認候補があります。</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }
+
     function renderPortfolioControls(visibleStocks) {
       const holdingCount = stocks.filter((stock) => stock.isHolding).length;
       const favoriteCount = stocks.filter((stock) => stock.isFavorite && !stock.isHolding).length;
@@ -2196,9 +2797,9 @@
               <strong>${escapeHtml(earnings.date || '未設定')}</strong>
               <em>${escapeHtml(`${earnings.daysText} / ${earnings.status}`)}</em>
             </div>
-            <div class="dashboard-brief ${latestIr ? 'info' : 'warn'}" title="${latestIr ? escapeHtml(`${latestIr.date} ${latestIr.category || 'IR'} / ${latestIr.title}`) : '未取得'}">
+            <div class="dashboard-brief ${latestIr ? (irCategoryClass(latestIr) || 'info') : 'warn'}" title="${latestIr ? escapeHtml(`${latestIr.date} ${latestIr.category || 'IR'} / ${latestIr.title}`) : '未取得'}">
               <span>最新IR</span>
-              <strong>${latestIr ? escapeHtml(`${latestIr.date} ${latestIr.category || 'IR'}`) : '未取得'}</strong>
+              <strong>${latestIr ? `${escapeHtml(latestIr.date || '')} ${renderIrCategoryBadge(latestIr)}` : '未取得'}</strong>
               <em>${latestIr ? escapeHtml(shortText(latestIr.title, 42)) : 'IR一括更新で取得'}</em>
             </div>
           </div>
@@ -2234,6 +2835,12 @@
         const earnings = earningsDisplay(stock);
         const technical = stock.technical || buildTechnical(stock);
         stock.technical = technical;
+        const earningsChip = earnings.date
+          ? `<span class="chip ${earnings.className}">次回決算 ${escapeHtml(earnings.date)} / ${escapeHtml(earnings.daysText)}</span>`
+          : '<span class="chip warn">次回決算 未設定</span>';
+        const latestIrLine = latestIr
+          ? `${escapeHtml(latestIr.date || '')} ${renderIrCategoryBadge(latestIr)}`
+          : (stock.irError ? `<span class="chip hit" title="${escapeHtml(stock.irError)}">IR取得失敗</span>` : '<span class="chip warn">IR未取得</span>');
         const techChip = technical
           ? `<span class="chip ${technical.score >= 65 ? 'good' : technical.score <= 40 ? 'warn' : 'info'}">${technical.trend} ${technical.score}</span>`
           : '<span class="chip">分析待ち</span>';
@@ -2241,14 +2848,14 @@
           <td><span class="ticker">${escapeHtml(stock.code)}</span><span class="market">${stock.market}</span><div class="name">${escapeHtml(stock.name || stock.code)}<br><span class="subtle">${escapeHtml(yahooSymbol(stock))}</span></div><div class="chip-row" style="margin-top:7px;">${ownershipChips(stock)}</div>${stock.error ? `<div class="chip hit" title="${escapeHtml(stock.error)}">価格取得エラー</div>` : stock.warning ? `<div class="chip warn" title="${escapeHtml(stock.warning)}">基本指標未取得</div>` : ''}</td>
           <td><div class="money">${formatPrice(stock.price, stock)}</div><div class="${changePct == null ? 'neutral' : changePct >= 0 ? 'positive' : 'negative'}">${formatPct(changePct)}</div><div class="subtle">${escapeHtml(stock.marketState || '')} / ${formatDateTime(stock.quoteFetchedAt || stock.chartFetchedAt)}</div></td>
           <td>${techChip}<div class="subtle" style="margin-top:7px;">RSI ${technical?.rsi == null ? '未取得' : technical.rsi.toFixed(1)}</div></td>
-          <td><label class="check"><input type="checkbox" ${stock.autoIr ? 'checked' : ''} ${stock.market !== 'JP' ? 'disabled' : ''} onchange="toggleAutoIr('${escapeJsArg(stock.id)}', this.checked)">IR自動</label><div class="subtle" style="margin-top:7px;">次回決算: ${escapeHtml(earnings.date ? `${earnings.date} / ${earnings.daysText}` : '未設定')}</div><div class="subtle" style="margin-top:7px;">${latestIr ? escapeHtml(latestIr.date + ' ' + latestIr.category) : (stock.irError ? escapeHtml(stock.irError) : 'IR未取得')}</div></td>
+          <td><label class="check"><input type="checkbox" ${stock.autoIr ? 'checked' : ''} ${stock.market !== 'JP' ? 'disabled' : ''} onchange="toggleAutoIr('${escapeJsArg(stock.id)}', this.checked)">IR自動</label><div class="chip-row" style="margin-top:8px;">${earningsChip}</div><div class="subtle" style="margin-top:8px;">最新IR: ${latestIrLine}</div></td>
           <td><div class="actions" style="justify-content:flex-start;"><button class="btn small ${stock.isHolding ? 'green' : 'ghost'}" onclick="toggleHolding('${escapeJsArg(stock.id)}')">${stock.isHolding ? '保有中' : '保有'}</button><button class="btn small ${stock.isFavorite ? 'primary' : 'ghost'}" onclick="toggleFavorite('${escapeJsArg(stock.id)}')">${stock.isFavorite ? '★' : '☆'}</button><button class="btn small primary" onclick="refreshOne('${escapeJsArg(stock.id)}')">更新</button><button class="btn small green" onclick="focusAnalysis('${escapeJsArg(stock.id)}')">分析</button><button class="btn small ghost" onclick="focusIr('${escapeJsArg(stock.id)}')">IR</button>${renderExternalStockLinks(stock)}<button class="btn small danger" onclick="removeStock('${escapeJsArg(stock.id)}')">削除</button></div></td>
         </tr>`;
       }).join('');
       const table = rows
         ? `<div class="table-wrap"><table><thead><tr><th>銘柄</th><th>現在値</th><th>テクニカル</th><th>IR</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`
         : '<div class="empty"><strong>このグループの銘柄はありません</strong>保有またはお気に入りを設定してください。</div>';
-      container.innerHTML = `${renderPortfolioControls(visibleStocks)}${renderStockDashboard(visibleStocks)}${table}`;
+      container.innerHTML = `${renderPortfolioControls(visibleStocks)}${renderMorningBrief(stocks)}${renderEarningsWatchlist(visibleStocks)}${renderStockDashboard(visibleStocks)}${table}`;
     }
 
     function renderSelects() {
@@ -2261,6 +2868,7 @@
         select.innerHTML = stockOptions;
         if (current && stocks.some((s) => String(s.id) === current)) select.value = current;
       }
+      syncAnalysisQuickSelect();
       renderPromptControls();
     }
 
@@ -2292,6 +2900,110 @@
       }
     }
 
+    function irStatusInfo(stock) {
+      normalizeStock(stock);
+      if (stock.market !== 'JP') return { state: 'unsupported', label: '対象外', cls: '', detail: '日本株のみTDnet IR取得に対応' };
+      if (stock.irStatus?.state === 'running') return { state: 'running', label: '取得中', cls: 'warn', detail: 'TDnetへ問い合わせ中' };
+      if (stock.irError || stock.irStatus?.state === 'error') return { state: 'error', label: '失敗', cls: 'hit', detail: stock.irError || stock.irStatus?.error || 'IR取得に失敗' };
+      if (stock.irFetchedAt) {
+        const days = ageDays(stock.irFetchedAt);
+        if (days != null && days > 3) return { state: 'stale', label: '古い', cls: 'warn', detail: `${ageText(stock.irFetchedAt)}に取得` };
+        return { state: 'ok', label: '成功', cls: 'good', detail: `${ageText(stock.irFetchedAt)}に取得` };
+      }
+      return { state: 'pending', label: '未取得', cls: 'warn', detail: 'IR一括更新または選択IR更新を実行してください' };
+    }
+
+    function earningsStatusInfo(stock) {
+      const event = stock.earningsEvent || {};
+      if (stock.market !== 'JP') return { label: '対象外', cls: '', detail: 'JPX決算予定は日本株のみ' };
+      if (event.jpxEarningsError) return { label: '失敗', cls: 'hit', detail: event.jpxEarningsError };
+      if (event.autoNextDate || event.nextDate) {
+        return { label: '取得済み', cls: 'good', detail: `${event.autoNextDate || event.nextDate} / ${event.autoNextDateSource || event.nextDateSource || 'source unknown'}` };
+      }
+      if (event.jpxEarningsFetchedAt) return { label: '未掲載', cls: 'warn', detail: `${ageText(event.jpxEarningsFetchedAt)}に確認。JPX側に予定なし` };
+      return { label: '未取得', cls: 'warn', detail: '価格/分析更新でJPX予定を取得' };
+    }
+
+    function renderIrStatusDashboard() {
+      const container = $('irStatusDashboard');
+      if (!container) return;
+      const jpStocks = stocks.filter((stock) => stock.market === 'JP');
+      const counts = { ok: 0, stale: 0, error: 0, pending: 0, running: 0 };
+      let lastFetchedAt = '';
+      for (const stock of jpStocks) {
+        const info = irStatusInfo(stock);
+        if (counts[info.state] != null) counts[info.state]++;
+        if (stock.irFetchedAt && (!lastFetchedAt || new Date(stock.irFetchedAt) > new Date(lastFetchedAt))) lastFetchedAt = stock.irFetchedAt;
+      }
+      const totalIr = jpStocks.reduce((sum, stock) => sum + (stock.irItems || []).length, 0);
+      const failedStocks = jpStocks.filter((stock) => irStatusInfo(stock).state === 'error');
+      const detailRows = jpStocks.map((stock) => {
+        const ir = irStatusInfo(stock);
+        const earnings = earningsStatusInfo(stock);
+        const latest = (stock.irItems || [])[0];
+        const status = stock.irStatus || {};
+        return `<tr>
+          <td><span class="ticker">${escapeHtml(stock.code)}</span><div class="name">${escapeHtml(stock.name || '')}</div></td>
+          <td><span class="chip ${ir.cls}">${escapeHtml(ir.label)}</span><div class="subtle" style="margin-top:7px;">${escapeHtml(ir.detail)}</div></td>
+          <td><span class="chip ${earnings.cls}">${escapeHtml(earnings.label)}</span><div class="subtle" style="margin-top:7px;">${escapeHtml(earnings.detail)}</div></td>
+          <td>${(stock.irItems || []).length}件<div class="subtle" style="margin-top:7px;">新着 ${Number(status.newCount || 0)}件 / ${escapeHtml(status.source || 'TDnet')}</div></td>
+          <td>${latest ? `${escapeHtml(latest.date || '')}<div class="subtle" style="margin-top:7px;">${escapeHtml(shortText(latest.title, 54))}</div>` : '<span class="subtle">なし</span>'}</td>
+          <td>${escapeHtml(status.route || '/tdnet/ir')}<div class="subtle" style="margin-top:7px;">${escapeHtml(status.error || '')}</div>${ir.state === 'error' ? `<div class="actions" style="justify-content:flex-start; margin-top:7px;"><button class="btn small green" onclick="retryOneIr('${escapeJsArg(stock.id)}')">再取得</button></div>` : ''}</td>
+        </tr>`;
+      }).join('');
+      container.innerHTML = `<div class="card" style="margin-bottom:14px;">
+        <div class="card-title"><span>IR/決算 取得ステータス</span><button class="btn small ghost" onclick="toggleIrStatusDetails()">${irStatusExpanded ? '詳細を閉じる' : '詳細を開く'}</button></div>
+        <div class="ir-status-grid">
+          <div class="ir-status-box"><span>JP stocks</span><strong>${jpStocks.length}</strong></div>
+          <div class="ir-status-box"><span>IR OK</span><strong>${counts.ok}</strong></div>
+          <div class="ir-status-box"><span>IR warn/ng</span><strong>${counts.stale + counts.error}</strong></div>
+          <div class="ir-status-box"><span>IR pending</span><strong>${counts.pending + counts.running}</strong></div>
+          <div class="ir-status-box"><span>IR items</span><strong>${totalIr}</strong></div>
+        </div>
+        <div class="mini-note">最終IR成功: ${escapeHtml(formatDateTime(lastFetchedAt))}${failedStocks.length ? ` / 失敗: ${failedStocks.slice(0, 5).map((stock) => escapeHtml(stock.code)).join('、')}` : ''}</div>
+        ${failedStocks.length ? `<div class="actions" style="justify-content:flex-start; margin-top:10px;"><button class="btn small green" onclick="retryFailedIr()">失敗銘柄だけ再取得</button></div>` : ''}
+        ${irStatusExpanded ? `<div class="table-wrap" style="margin-top:12px;"><table class="ir-status-table"><thead><tr><th>銘柄</th><th>IR</th><th>次回決算</th><th>件数</th><th>最新IR</th><th>経路/エラー</th></tr></thead><tbody>${detailRows || '<tr><td colspan="6">日本株がありません</td></tr>'}</tbody></table></div>` : ''}
+      </div>`;
+    }
+
+    function toggleIrStatusDetails() {
+      irStatusExpanded = !irStatusExpanded;
+      renderIrStatusDashboard();
+    }
+
+    async function retryOneIr(id) {
+      const stock = stocks.find((s) => String(s.id) === String(id));
+      if (!stock) return showToast('銘柄が見つかりません', 'warn');
+      try {
+        setLastRun(`${stock.code} IR再取得中`);
+        await fetchIr(stock);
+        saveState();
+        renderAll();
+        showToast(`${stock.code} のIRを再取得しました`, 'success');
+      } catch (error) {
+        saveState();
+        renderAll();
+        showToast(`${stock.code} のIR再取得に失敗: ${error.message}`, 'error');
+      }
+    }
+
+    async function retryFailedIr() {
+      const targets = stocks.filter((stock) => irStatusInfo(stock).state === 'error');
+      if (!targets.length) return showToast('IR失敗銘柄はありません', 'success');
+      let failed = 0;
+      for (const stock of targets) {
+        try {
+          setLastRun(`${stock.code} IR再取得中`);
+          await fetchIr(stock, { silent: true });
+        } catch {
+          failed++;
+        }
+        saveState();
+        renderAll();
+      }
+      showToast(failed ? `IR再取得完了: ${targets.length - failed}/${targets.length}件成功` : '失敗銘柄のIRを再取得しました', failed ? 'warn' : 'success');
+    }
+
     function renderIr() {
       const container = $('irContainer');
       const stockId = $('irStockFilter')?.value;
@@ -2309,7 +3021,7 @@
         container.innerHTML = `<div class="empty"><strong>IRデータがありません</strong>日本株を追加して「IR一括更新」または「選択IR更新」を実行してください。</div>`;
         return;
       }
-      container.innerHTML = `<div class="ir-list">${list.map(({ stock, item }) => `<article class="ir-item"><div class="ir-head"><span>${escapeHtml(item.date)} ${escapeHtml(item.time || '')} / ${escapeHtml(stock.code)} ${escapeHtml(stock.name || '')}</span><span class="chip info">${escapeHtml(item.category || 'その他')}</span></div><div class="ir-title">${safeIrUrl(item.url) ? `<a href="${escapeHtml(safeIrUrl(item.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>` : escapeHtml(item.title)}</div><div class="subtle" style="margin-top:8px;">${escapeHtml(item.exchange || '')}</div></article>`).join('')}</div>`;
+      container.innerHTML = `<div class="ir-list">${list.map(({ stock, item }) => `<article class="ir-item"><div class="ir-head"><span>${escapeHtml(item.date)} ${escapeHtml(item.time || '')} / ${escapeHtml(stock.code)} ${escapeHtml(stock.name || '')}</span>${renderIrCategoryBadge(item)}</div><div class="ir-title">${safeIrUrl(item.url) ? `<a href="${escapeHtml(safeIrUrl(item.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>` : escapeHtml(item.title)}</div><div class="subtle" style="margin-top:8px;">${escapeHtml(item.exchange || '')}</div></article>`).join('')}</div>`;
     }
 
     function renderAnalysis() {
@@ -2387,17 +3099,17 @@
       container.innerHTML = `<div class="log-list">${alertLog.slice(0, 200).map((log) => `<div class="log-item"><div class="subtle">${formatDateTime(log.time)}</div><div><span class="ticker">${escapeHtml(log.code || '')}</span><span class="name" style="display:inline;margin-left:8px;">${escapeHtml(log.name || '')}</span><div style="margin-top:8px;">${escapeHtml(log.message || '')}</div></div><span class="chip ${log.level === 'bad' ? 'hit' : log.level === 'info' ? 'info' : 'warn'}">${escapeHtml(log.type || 'alert')}</span></div>`).join('')}</div>`;
     }
 
-    function switchTab(name) {
+    function switchTab(name, options = {}) {
       document.querySelectorAll('.tab').forEach((button) => button.classList.toggle('active', button.dataset.tab === name));
       document.querySelectorAll('.panel').forEach((panel) => panel.classList.toggle('active', panel.id === `panel-${name}`));
       renderAll();
+      updateAnalysisQuickSwitcher();
+      if (!options.keepScroll) window.requestAnimationFrame(scrollToActivePanelTop);
     }
 
     function focusAnalysis(id) {
       switchTab('analysis');
-      $('analysisStockSelect').value = String(id);
-      renderPromptControls();
-      renderAnalysis();
+      setAnalysisStock(id);
     }
 
     function focusIr(id) {
@@ -2608,6 +3320,18 @@
       if (field === 'nextDate' || field === 'status') renderAnalysis();
     }
 
+    function markEarningsReviewed(id) {
+      const stock = stocks.find((s) => String(s.id) === String(id));
+      if (!stock) return showToast('銘柄が見つかりません', 'warn');
+      stock.earningsEvent = stock.earningsEvent || {};
+      stock.earningsEvent.status = '確認済み';
+      stock.earningsEvent.reviewedAt = new Date().toISOString();
+      stock.earningsEvent.updatedAt = new Date().toISOString();
+      saveState();
+      renderAll();
+      showToast(`${stock.code} ${stock.name || ''} を確認済みにしました`, 'success');
+    }
+
     function applyAutoEarningsDate() {
       const stock = currentAnalysisStock();
       const autoDate = stock?.earningsEvent?.autoNextDate;
@@ -2643,19 +3367,16 @@
       saveState();
     }
 
-    function saveAiResponseNote() {
-      const stock = currentAnalysisStock();
-      if (!stock) return showToast('銘柄を選択してください', 'warn');
-      const text = String($('aiResponseNoteInput')?.value || '').trim();
-      if (!text) return showToast('保存するAI回答を貼り付けてください', 'warn');
+    function buildAiResponseNote(stock, text, meta = {}) {
       const prompt = stock.irPrompt || null;
       const selected = getSelectedPromptIr(stock);
-      const note = {
+      return {
         id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         text,
-        promptId: prompt?.id || '',
-        template: prompt?.template || (stock.promptTemplate === 'auto' ? inferPromptTemplate(selected) : stock.promptTemplate) || 'earnings',
-        item: prompt?.item || (selected ? {
+        promptId: meta.promptId || prompt?.id || '',
+        template: meta.template || prompt?.template || (stock.promptTemplate === 'auto' ? inferPromptTemplate(selected) : stock.promptTemplate) || 'earnings',
+        source: meta.source || 'manual',
+        item: meta.item || prompt?.item || (selected ? {
           id: irItemKey(selected),
           date: selected.date || '',
           time: selected.time || '',
@@ -2663,13 +3384,40 @@
           url: selected.url || '',
           category: selected.category || ''
         } : null),
-        createdAt: new Date().toISOString()
+        createdAt: meta.createdAt || new Date().toISOString()
       };
+    }
+
+    function addAiResponseNote(stock, text, meta = {}) {
+      const clean = String(text || '').trim();
+      if (!clean) throw new Error('AI回答本文が空です');
+      const note = buildAiResponseNote(stock, clean, meta);
       stock.aiResponseNotes = [note, ...(stock.aiResponseNotes || [])].slice(0, 20);
       stock.aiResponseDraft = '';
-      saveState();
-      renderAll();
-      showToast(`${stock.code} のAI回答メモを保存しました`, 'success');
+      return note;
+    }
+
+    function saveAiResponseNote() {
+      const stock = currentAnalysisStock();
+      if (!stock) return showToast('銘柄を選択してください', 'warn');
+      const text = String($('aiResponseNoteInput')?.value || '').trim();
+      if (!text) return showToast('保存するAI回答を貼り付けてください', 'warn');
+      try {
+        const parsed = parseAiResponseContent(text, '貼り付け回答');
+        stock.aiAnalysis = parsed.analysis;
+        stock.aiError = null;
+        addAiResponseNote(stock, parsed.text, {
+          template: parsed.template,
+          source: parsed.payload ? 'json-paste' : 'markdown-paste',
+          item: parsed.payload?.selectedIr || parsed.payload?.item || null,
+          createdAt: parsed.analysis.generatedAt || new Date().toISOString()
+        });
+        saveState();
+        renderAll();
+        showToast(`${stock.code} のAI回答を分析欄に反映しました`, 'success');
+      } catch (error) {
+        showToast(`AI回答の保存に失敗: ${error.message}`, 'error');
+      }
     }
 
     async function copyAiResponseNote(stockId, noteId) {
@@ -2722,36 +3470,6 @@
       URL.revokeObjectURL(url);
     }
 
-    function saveCurrentIrPromptMarkdown() {
-      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
-      if (!stock) return showToast('銘柄を選択してください', 'warn');
-      const item = getSelectedPromptIr(stock);
-      if (!item?.url) return showToast('保存できるIR PDFがありません', 'warn');
-      const templateChoice = $('promptTemplateSelect')?.value || stock.promptTemplate || 'auto';
-      const template = templateChoice === 'auto' ? inferPromptTemplate(item) : templateChoice;
-      const entry = stock.irPrompt?.item?.id === irItemKey(item) && stock.irPrompt?.template === template && stock.irPrompt?.text
-        ? stock.irPrompt
-        : buildPromptEntry(stock, item, templateChoice);
-      if (entry !== stock.irPrompt) savePromptEntry(stock, item, entry, templateChoice);
-      const body = [
-        `# ${stock.code} ${companyNameForPrompt(stock)} IR分析プロンプト`,
-        '',
-        `- 作成日時: ${formatDateTime(entry.generatedAt)}`,
-        `- テンプレート: ${promptTemplateLabel(entry.template || 'earnings')}`,
-        `- IR: ${entry.item?.date || ''} ${entry.item?.title || ''}`,
-        `- PDF: ${entry.item?.url || ''}`,
-        '',
-        '```text',
-        entry.text,
-        '```'
-      ].join('\n');
-      const filename = sanitizeFilename(`${stock.code}-${entry.item?.date || new Date().toISOString().slice(0, 10)}-${promptTemplateLabel(entry.template || 'earnings')}.md`);
-      downloadTextFile(filename, body, 'text/markdown;charset=utf-8');
-      saveState();
-      renderAll();
-      showToast(`${stock.code} のプロンプトMarkdownを保存しました`, 'success');
-    }
-
     function exportAiResponseNotesMarkdown() {
       const stock = currentAnalysisStock();
       if (!stock) return showToast('銘柄を選択してください', 'warn');
@@ -2775,18 +3493,6 @@
       const filename = sanitizeFilename(`${stock.code}-ai-response-notes-${new Date().toISOString().slice(0, 10)}.md`);
       downloadTextFile(filename, body, 'text/markdown;charset=utf-8');
       showToast(`${stock.code} のAI回答メモ履歴を保存しました`, 'success');
-    }
-
-    function clearSelectedPromptHistory() {
-      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
-      if (!stock) return showToast('銘柄を選択してください', 'warn');
-      if (!confirm(`${stock.code} のプロンプト履歴を削除しますか？`)) return;
-      stock.irPromptHistory = [];
-      stock.irPrompt = null;
-      stock.irPromptError = null;
-      saveState();
-      renderAll();
-      showToast(`${stock.code} のプロンプト履歴を削除しました`, 'success');
     }
 
     function handlePromptIrChange() {
@@ -2842,31 +3548,171 @@
       }
     }
 
-    async function copyAiMemo() {
-      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
+    async function copyCodexAiRequest() {
+      const stock = currentAnalysisStock();
       if (!stock) return showToast('銘柄を選択してください', 'warn');
-      if (!stock.aiAnalysis) {
-        stock.aiAnalysis = buildLocalAnalysis(stock);
-        saveState();
-        renderAll();
-      }
-      const memo = buildChatGptMemoText(stock);
       try {
-        await copyText(memo);
-        showToast(`${stock.code} のChatGPT用レポートをコピーしました`, 'success');
+        const request = buildCodexAiAnalysisRequest(stock);
+        await copyText(JSON.stringify(request, null, 2));
+        showToast(`${stock.code} のCodex依頼JSONをコピーしました`, 'success');
       } catch (error) {
-        showToast(`クリップボードへのコピーに失敗しました: ${error.message}`, 'error');
+        showToast(`Codex依頼JSONのコピーに失敗: ${error.message}`, 'error');
       }
     }
 
-    function clearSelectedAiAnalysis() {
-      const stock = stocks.find((s) => String(s.id) === String($('analysisStockSelect').value));
-      if (!stock) return showToast('銘柄を選択してください', 'warn');
-      stock.aiAnalysis = null;
-      stock.aiError = null;
-      saveState();
-      renderAll();
-      showToast(`${stock.code} の分析レポートを削除しました`, 'success');
+    function textList(value) {
+      if (Array.isArray(value)) {
+        return value
+          .flatMap((item) => Array.isArray(item) ? item : [item])
+          .map((item) => typeof item === 'string' ? item : JSON.stringify(item))
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+      if (typeof value === 'string') {
+        return value
+          .split(/\r?\n/)
+          .map((line) => line.replace(/^[-*]\s*/, '').trim())
+          .filter(Boolean);
+      }
+      return [];
+    }
+
+    function firstParagraph(text, max = 360) {
+      const paragraph = String(text || '')
+        .split(/\n\s*\n/)
+        .map((part) => part.replace(/^#+\s*/, '').trim())
+        .find(Boolean) || '';
+      return paragraph.length > max ? `${paragraph.slice(0, max)}...` : paragraph;
+    }
+
+    function markdownToAiSections(text) {
+      const lines = String(text || '').split(/\r?\n/);
+      const sections = [];
+      let current = null;
+      const startSection = (title) => {
+        current = { title: title.trim(), items: [] };
+        sections.push(current);
+      };
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        const heading = line.match(/^#{1,3}\s+(.+)$/);
+        if (heading) {
+          startSection(heading[1]);
+          continue;
+        }
+        const bullet = line.match(/^[-*]\s+(.+)$/);
+        if (!current) startSection('AI回答');
+        if (bullet) current.items.push(bullet[1].trim());
+        else if (!/^```/.test(line) && current.items.length < 12) current.items.push(line);
+      }
+      if (!sections.length) {
+        const items = String(text || '')
+          .split(/\n\s*\n/)
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .slice(0, 10);
+        return [{ title: 'AI回答', items: items.length ? items : ['本文を抽出できませんでした。'] }];
+      }
+      return sections
+        .filter((section) => section.title)
+        .slice(0, 10)
+        .map((section) => ({
+          title: section.title,
+          items: section.items.filter(Boolean).slice(0, 12)
+        }));
+    }
+
+    function normalizeImportedSections(value, fallbackText) {
+      if (Array.isArray(value)) {
+        const sections = value.map((section, index) => {
+          if (typeof section === 'string') return { title: `Section ${index + 1}`, items: textList(section).slice(0, 12) };
+          return {
+            title: String(section?.title || section?.heading || `Section ${index + 1}`),
+            items: textList(section?.items || section?.bullets || section?.content || section?.text).slice(0, 12)
+          };
+        }).filter((section) => section.title && section.items.length);
+        if (sections.length) return sections.slice(0, 10);
+      }
+      return markdownToAiSections(fallbackText);
+    }
+
+    function importedJsonToMarkdown(payload) {
+      const source = payload?.analysis && typeof payload.analysis === 'object' ? payload.analysis : payload;
+      const direct = source?.markdown || source?.text || source?.report_markdown || source?.reportMarkdown || source?.response || payload?.markdown || payload?.text;
+      if (typeof direct === 'string' && direct.trim()) return direct.trim();
+      const sections = normalizeImportedSections(source?.sections, '');
+      const lines = [
+        `# ${source?.code || payload?.code || source?.name || 'AI分析'} 外部AI分析`,
+        '',
+        source?.summary ? `## 総評\n${source.summary}` : '',
+        source?.stance || source?.stance_reason ? `## 投資スタンス\n- スタンス: ${source.stance || source.investment_stance || '未判定'}\n- 理由: ${source.stance_reason || source.stanceReason || '未取得'}` : '',
+        ...sections.flatMap((section) => [
+          `## ${section.title}`,
+          ...section.items.map((item) => `- ${item}`),
+          ''
+        ]),
+        textList(source?.bull_case || source?.bullCase || source?.bull).length ? `## Bull Case\n${textList(source.bull_case || source.bullCase || source.bull).map((item) => `- ${item}`).join('\n')}` : '',
+        textList(source?.bear_case || source?.bearCase || source?.bear).length ? `## Bear Case\n${textList(source.bear_case || source.bearCase || source.bear).map((item) => `- ${item}`).join('\n')}` : '',
+        textList(source?.key_indicators || source?.keyIndicators || source?.next_checks).length ? `## 次回確認点\n${textList(source.key_indicators || source.keyIndicators || source.next_checks).map((item) => `- ${item}`).join('\n')}` : ''
+      ].filter(Boolean);
+      return lines.join('\n\n').trim() || JSON.stringify(payload, null, 2);
+    }
+
+    function normalizeImportedAiAnalysis(payload, fallbackText, fileName = '') {
+      const source = payload?.analysis && typeof payload.analysis === 'object' ? payload.analysis : (payload || {});
+      const text = fallbackText || importedJsonToMarkdown(source);
+      const stance = source.stance || source.investment_stance || source.investmentStance || (String(text).match(/投資スタンス[^:：\n]*[:：]\s*([^\n]+)/)?.[1]) || '未判定';
+      const dataSources = textList(source.data_sources || source.dataSources);
+      if (fileName) dataSources.push(`読み込みファイル: ${fileName}`);
+      return {
+        summary: source.summary || source.overall || source.overview || firstParagraph(text),
+        sections: normalizeImportedSections(source.sections, text),
+        facts: textList(source.facts || source.key_facts || source.confirmed_facts),
+        positives: textList(source.positives || source.positive || source.upside),
+        risks: textList(source.risks || source.risk_factors || source.negative),
+        bull_case: textList(source.bull_case || source.bullCase || source.bull),
+        bear_case: textList(source.bear_case || source.bearCase || source.bear),
+        risk_matrix: textList(source.risk_matrix || source.riskMatrix || source.risks),
+        key_indicators: textList(source.key_indicators || source.keyIndicators || source.next_checks || source.watch_points),
+        stance: String(stance).trim(),
+        stance_reason: source.stance_reason || source.stanceReason || source.reason || '外部AI回答から取り込みました。詳細はChatGPT回答メモを確認してください。',
+        data_sources: dataSources.length ? dataSources : ['Codex/ChatGPT回答ファイル'],
+        technical_view: source.technical_view || source.technicalView || source.technical || '外部AI回答から取り込みました。詳細はChatGPT回答メモを確認してください。',
+        ir_focus: textList(source.ir_focus || source.irFocus || source.ir_points),
+        next_checks: textList(source.next_checks || source.nextChecks || source.key_indicators),
+        unknowns: textList(source.unknowns || source.missing_data || source.unavailable),
+        confidence: source.confidence || source.confidence_level || source.confidenceLevel || '中',
+        disclaimer: source.disclaimer || 'これは投資助言ではなく、あくまで分析材料です。最終判断は自己責任で行ってください。',
+        model: source.model || payload?.model || 'CODEX_IMPORTED',
+        generatedAt: source.generatedAt || source.generated_at || payload?.generatedAt || new Date().toISOString()
+      };
+    }
+
+    function parseAiResponseContent(text, fileName = '') {
+      const raw = String(text || '').trim();
+      if (!raw) throw new Error('ファイルが空です');
+      try {
+        const payload = JSON.parse(raw);
+        if (payload?.type === 'kabu_lab_ai_analysis_request') {
+          throw new Error('これは依頼JSONです。Codex/ChatGPTの回答JSONまたはMarkdownを読み込んでください。');
+        }
+        const noteText = importedJsonToMarkdown(payload);
+        return {
+          payload,
+          text: noteText,
+          analysis: normalizeImportedAiAnalysis(payload, noteText, fileName),
+          template: 'codex'
+        };
+      } catch (error) {
+        if (fileName.toLowerCase().endsWith('.json') || raw.startsWith('{') || raw.startsWith('[')) throw error;
+        return {
+          payload: null,
+          text: raw,
+          analysis: normalizeImportedAiAnalysis(null, raw, fileName),
+          template: 'imported'
+        };
+      }
     }
 
     function exportData() {
@@ -2890,6 +3736,21 @@
         }
       };
       reader.readAsText(file, 'UTF-8');
+    }
+
+    function clearLocalData() {
+      if (!confirm('KABU LABのローカル保存データを削除しますか？銘柄、メモ、通知履歴、プロキシ設定が消えます。必要なら先にJSON出力してください。')) return;
+      localStorage.removeItem(STORAGE_STOCKS);
+      localStorage.removeItem(STORAGE_LOG);
+      localStorage.removeItem(STORAGE_PROXY);
+      localStorage.removeItem(STORAGE_PORTFOLIO_FILTER);
+      stocks = [];
+      alertLog = [];
+      portfolioFilter = 'all';
+      setProxyBase('http://127.0.0.1:8809');
+      saveState();
+      renderAll();
+      showToast('ローカル保存データを削除しました', 'success');
     }
 
     function renderAnalysis() {
@@ -2927,18 +3788,17 @@
       $('clearIrBtn').addEventListener('click', renderIr);
       $('irStockFilter').addEventListener('change', renderIr);
       $('irCategoryFilter').addEventListener('change', renderIr);
-      $('analysisStockSelect').addEventListener('change', () => { renderPromptControls(); renderAnalysis(); });
+      $('analysisStockSelect').addEventListener('change', () => setAnalysisStock($('analysisStockSelect').value, { keepScroll: true }));
+      $('analysisQuickSelect').addEventListener('change', () => setAnalysisStock($('analysisQuickSelect').value, { keepScroll: true }));
+      $('analysisQuickUpdateBtn').addEventListener('click', refreshSelectedAnalysis);
       $('refreshSelectedAnalysisBtn').addEventListener('click', refreshSelectedAnalysis);
       $('openLatestIrBtn').addEventListener('click', openLatestIr);
       $('promptIrSelect').addEventListener('change', handlePromptIrChange);
       $('promptTemplateSelect').addEventListener('change', handlePromptTemplateChange);
       $('copyIrPromptBtn').addEventListener('click', copyLatestEarningsIrPrompt);
       $('openPromptIrBtn').addEventListener('click', openSelectedPromptIr);
-      $('saveIrPromptBtn').addEventListener('click', saveCurrentIrPromptMarkdown);
-      $('clearPromptHistoryBtn').addEventListener('click', clearSelectedPromptHistory);
       $('runAiAnalysisBtn').addEventListener('click', runSelectedAiAnalysis);
-      $('copyAiMemoBtn').addEventListener('click', copyAiMemo);
-      $('clearAiAnalysisBtn').addEventListener('click', clearSelectedAiAnalysis);
+      $('copyCodexRequestBtn').addEventListener('click', copyCodexAiRequest);
       $('clearLogBtn').addEventListener('click', () => {
         if (!confirm('通知履歴を削除しますか？')) return;
         alertLog = [];
@@ -2947,6 +3807,12 @@
       });
       $('exportBtn').addEventListener('click', exportData);
       $('importBtn').addEventListener('click', () => $('importFile').click());
+      $('clearLocalDataBtn').addEventListener('click', clearLocalData);
+      $('jumpTopBtn').addEventListener('click', scrollToPageTop);
+      $('jumpPanelBtn').addEventListener('click', scrollToActivePanelTop);
+      $('jumpBottomBtn').addEventListener('click', scrollToPageBottom);
+      window.addEventListener('scroll', updatePageJumpState, { passive: true });
+      window.addEventListener('resize', updatePageJumpState);
       $('importFile').addEventListener('change', (event) => {
         const file = event.target.files?.[0];
         if (file) importData(file);
@@ -2960,6 +3826,8 @@
       saveState();
       bindEvents();
       renderAll();
+      updatePageJumpState();
+      updateAnalysisQuickSwitcher();
       checkProxy();
       if (stocks.length) {
         window.setTimeout(() => refreshAll({ silent: true }), 800);

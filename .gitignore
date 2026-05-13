@@ -1,0 +1,13 @@
+# Temporary/editor files
+*.tmp
+*.temp
+*.bak
+*.log
+*~
+.kabu-*-check.js
+
+# Generated app outputs
+out/
+json/
+kabu-lab/out/
+kabu-lab/json/

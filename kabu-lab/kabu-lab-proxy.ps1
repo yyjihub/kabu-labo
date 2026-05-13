@@ -15,16 +15,18 @@
 #   /news/morning?codes=7203,6758&days=3
 
 param(
-  [int]$Port = 8791
+  [int]$Port = 8791,
+  [switch]$StrictSources
 )
 
 $ErrorActionPreference = "Stop"
-$ProxyVersion = "2026-05-09.1"
+$ProxyVersion = "2026-05-13.1"
 $ClientReadTimeoutMs = 10000
 $ClientWriteTimeoutMs = 20000
 $JpxEarningsPageUrl = "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html"
 $JpxEarningsMaxBytes = 8 * 1024 * 1024
 $script:JpxEarningsCache = $null
+$StrictSourceMode = $StrictSources.IsPresent -or $env:KABU_LAB_STRICT_SOURCES -eq "1"
 
 $NewsFetcherDir = Join-Path $PSScriptRoot "news-fetchers"
 foreach ($moduleName in @("Common.ps1", "TdnetFetcher.ps1", "EdinetFetcher.ps1", "YahooFinanceFetcher.ps1", "XFetcher.ps1", "PriceRankingFetcher.ps1", "MorningNewsAggregator.ps1")) {
@@ -502,6 +504,27 @@ function Get-CompanyName {
   if ($safeMarket -eq "JP") {
     if ($Code -notmatch "^\d{4}$") { throw "invalid Japanese stock code" }
     $symbol = "$Code.T"
+    try {
+      $encoded = [System.Uri]::EscapeDataString($symbol)
+      $quoteJson = Invoke-UpstreamJsonAny @(
+        "https://query2.finance.yahoo.com/v7/finance/quote?symbols=$encoded",
+        "https://query1.finance.yahoo.com/v7/finance/quote?symbols=$encoded"
+      )
+      $quoteData = $quoteJson | ConvertFrom-Json
+      $quote = @($quoteData.quoteResponse.result) | Select-Object -First 1
+      if ($quote -and ($quote.longName -or $quote.shortName)) {
+        $quoteName = [string]$quote.longName
+        if ([string]::IsNullOrWhiteSpace($quoteName)) { $quoteName = [string]$quote.shortName }
+        if ($quoteName -and $quoteName -ne $Code -and $quoteName -ne $symbol -and $quoteName.Length -le 80) {
+          return $quoteName
+        }
+      }
+    } catch {}
+
+    if ($StrictSourceMode) {
+      throw "company name not found in quote API and strict sources are enabled"
+    }
+
     try {
       $fallbackJson = ConvertTo-YahooQuoteFromYahooJapan -Symbols $symbol
       $fallback = $fallbackJson | ConvertFrom-Json
@@ -1718,7 +1741,7 @@ function Handle-Request {
     return
   }
   if ($Path -eq "/health") {
-    Send-Json $Stream 200 @{ ok = $true; time = [DateTime]::Now.ToString("o"); port = $Port; version = $ProxyVersion }
+    Send-Json $Stream 200 @{ ok = $true; time = [DateTime]::Now.ToString("o"); port = $Port; version = $ProxyVersion; strictSources = $StrictSourceMode }
     return
   }
   if ($Path -eq "/name") {
@@ -1771,9 +1794,17 @@ function Handle-Request {
     )
     try {
       $primaryJson = Invoke-UpstreamJsonAny $urls
-      Send-Body $Stream 200 (Add-YahooJapanEarningsFallback -PrimaryJson $primaryJson -Symbols $symbol)
+      if ($StrictSourceMode) {
+        Send-Body $Stream 200 $primaryJson
+      } else {
+        Send-Body $Stream 200 (Add-YahooJapanEarningsFallback -PrimaryJson $primaryJson -Symbols $symbol)
+      }
     } catch {
-      Send-Body $Stream 200 (ConvertTo-YahooQuoteFromYahooJapan -Symbols $symbol)
+      if ($StrictSourceMode) {
+        Send-Json $Stream 502 @{ ok = $false; error = "quote failed"; detail = (Get-DeepErrorMessage $_); strictSources = $true }
+      } else {
+        Send-Body $Stream 200 (ConvertTo-YahooQuoteFromYahooJapan -Symbols $symbol)
+      }
     }
     return
   }
@@ -1802,7 +1833,11 @@ function Handle-Request {
       try {
         Send-Body $Stream 200 (ConvertTo-YahooChartFromStooq -Symbol $symbol -Range $range)
       } catch {
-        Send-Body $Stream 200 (ConvertTo-YahooChartFromYahooJapanHistory -Symbol $symbol -Range $range)
+        if ($StrictSourceMode) {
+          Send-Json $Stream 502 @{ ok = $false; error = "chart failed"; detail = (Get-DeepErrorMessage $_); strictSources = $true }
+        } else {
+          Send-Body $Stream 200 (ConvertTo-YahooChartFromYahooJapanHistory -Symbol $symbol -Range $range)
+        }
       }
     }
     return
@@ -1826,17 +1861,19 @@ function Handle-Request {
       $items.Add($item)
       $seen[$item.id] = $true
     }
-    try {
-      $cutoff = (Get-Date).Date.AddDays(-1 * ($safeDays - 1))
-      foreach ($item in (Get-YahooDisclosureItems -Code $code -Limit 80)) {
-        $itemDate = [DateTime]::ParseExact($item.date, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
-        if ($itemDate -lt $cutoff) { continue }
-        if ($seen.ContainsKey($item.id)) { continue }
-        $items.Add($item)
-        $seen[$item.id] = $true
+    if (-not $StrictSourceMode) {
+      try {
+        $cutoff = (Get-Date).Date.AddDays(-1 * ($safeDays - 1))
+        foreach ($item in (Get-YahooDisclosureItems -Code $code -Limit 80)) {
+          $itemDate = [DateTime]::ParseExact($item.date, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
+          if ($itemDate -lt $cutoff) { continue }
+          if ($seen.ContainsKey($item.id)) { continue }
+          $items.Add($item)
+          $seen[$item.id] = $true
+        }
+      } catch {
+        # TDnet official list remains the primary source; Yahoo disclosure is a best-effort fallback.
       }
-    } catch {
-      # TDnet official list remains the primary source; Yahoo disclosure is a best-effort fallback.
     }
     Send-Json $Stream 200 @{ ok = $true; source = "TDnet"; code = $code; days = $safeDays; fetchedAt = [DateTime]::Now.ToString("o"); count = $items.Count; items = $items }
     return
@@ -1845,6 +1882,12 @@ function Handle-Request {
     $codes = @(Split-ListQueryValue $Query["codes"])
     $terms = @(Split-ListQueryValue $Query["terms"])
     $largeCaps = @(Split-ListQueryValue $Query["largeCaps"])
+    if (-not $codes.Count) {
+      $codes = @(Get-DefaultLargeCapCodes)
+    }
+    if (-not $largeCaps.Count) {
+      $largeCaps = @($codes)
+    }
     if ($codes.Count -gt 120) {
       Send-Json $Stream 400 @{ ok = $false; error = "too many codes" }
       return

@@ -12,12 +12,12 @@ if %ERRORLEVEL%==0 (
   exit /b 0
 )
 
-if not exist "%~dp0kabu-proxy.ps1" (
-  echo [ERROR] kabu-proxy.ps1 not found.
+if not exist "%~dp0stock-alert\kabu-proxy.ps1" (
+  echo [ERROR] stock-alert\kabu-proxy.ps1 not found.
   pause
   exit /b 1
 )
 
 rem Keep the PowerShell window open so errors remain visible instead of disappearing.
-start "KABU Proxy :%PORT%" powershell -NoExit -NoProfile -ExecutionPolicy Bypass -File "%~dp0kabu-proxy.ps1" -Port %PORT%
+start "KABU Proxy :%PORT%" powershell -NoExit -NoProfile -ExecutionPolicy Bypass -File "%~dp0stock-alert\kabu-proxy.ps1" -Port %PORT%
 exit /b 0

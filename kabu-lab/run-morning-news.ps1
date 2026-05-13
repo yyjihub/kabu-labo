@@ -6,7 +6,7 @@
 )
 
 $ErrorActionPreference = "Stop"
-$ExpectedProxyVersion = "2026-05-09.1"
+$ExpectedProxyVersion = "2026-05-13.1"
 
 if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
   $ConfigPath = Join-Path $PSScriptRoot "morning-news-config.json"

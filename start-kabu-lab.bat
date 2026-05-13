@@ -3,18 +3,18 @@ setlocal
 cd /d "%~dp0"
 
 set "PORT=8809"
-set "EXPECTED_VERSION=2026-05-09.1"
-set "PROXY=%~dp0kabu-lab-proxy.ps1"
-set "APP=%~dp0kabu-lab.html"
+set "EXPECTED_VERSION=2026-05-13.1"
+set "PROXY=%~dp0kabu-lab\kabu-lab-proxy.ps1"
+set "APP=%~dp0kabu-lab\kabu-lab.html"
 
 if not exist "%PROXY%" (
-  echo [ERROR] kabu-lab-proxy.ps1 not found.
+  echo [ERROR] kabu-lab\kabu-lab-proxy.ps1 not found.
   pause
   exit /b 1
 )
 
 if not exist "%APP%" (
-  echo [ERROR] kabu-lab.html not found.
+  echo [ERROR] kabu-lab\kabu-lab.html not found.
   pause
   exit /b 1
 )
